@@ -1,0 +1,446 @@
+<template>
+  <div>
+    <div class="timeout_container">
+      <div class="timecount">
+        <div class=title>
+        考核指标
+          <vxe-button status="primary" icon="vxe-icon--d-arrow-right" id="btn_daily" @click="toDaily">每日通报</vxe-button>
+        </div>
+        <vxe-table align="center" :data="timeCount" max-height='90%' auto-resize>
+          <vxe-table-column width="26%" field="item" title="考核项目"></vxe-table-column>
+          <vxe-table-column width="17%" field="sum" title="总工单数"></vxe-table-column>
+          <vxe-table-column width="17%" field="timeout" title="超时数"></vxe-table-column>
+          <vxe-table-column width="20%" field="time" title="平均历时(分钟)"></vxe-table-column>
+          <vxe-table-column width="20%" field="rate" title="及时率"></vxe-table-column>
+        </vxe-table>
+      </div>
+
+      <div class="timeout">
+        <div class=title>
+        重要客户故障与超时工单
+          <vxe-button type="text" id="btn_switch" @click="timeoutMode = 1 - timeoutMode">{{timeoutMode==1?"显示所有":"仅显示超时"}}</vxe-button>
+          <vxe-button status="primary" icon="vxe-icon--d-arrow-right" id="btn_list" @click="toList">考核工单详情</vxe-button>
+          <!-- <vxe-button id="btn_add" status="primary" icon="vxe-icon--plus" @click="isAdd = !isAdd">添加澄清</vxe-button> -->
+          <!-- <vxe-modal v-model="isAdd" :lock-scroll="false" show-footer width="50%" @confirm="parseInt(reduce[0].time) > parseInt(reduce[0].maxTime)?:addReduce"> -->
+          <vxe-modal title="添加澄清" v-model="isAdd" :lock-scroll="false" show-footer width="50%" @confirm="addReduce">
+          <vxe-table
+          show-overflow
+          height="fit-content"
+          align="center"
+          :sync-resize="isAdd"
+          border
+          :data="reduce"
+          :edit-config="{trigger: 'click', mode: 'cell', activeMethod: not_edit_id}">
+          <vxe-table-column field="id" title="故障单编号" width="50%" :edit-render="{name: 'input'}"></vxe-table-column>
+          <vxe-table-column field="province" title="澄清归属" width="30%" :edit-render="{name: 'input', attrs: {type: 'text'}}"></vxe-table-column>
+          <vxe-table-column field="time" title="澄清历时" width="20%" :edit-render="{name: '$input', props: {type: 'number'}}"></vxe-table-column>
+          </vxe-table>
+          </vxe-modal>
+        </div>
+        <vxe-table 
+        align="center" 
+        border 
+        highlight-hover-row 
+        max-height='90%' 
+        auto-resize
+        resizable
+        :cell-class-name="cell_class" 
+        :data="timeoutMode==1?timeoutList:showList" 
+        @cell-dblclick="dbClick">
+          <vxe-table-column width="24%" field="id" title="故障单编号"></vxe-table-column>
+          <vxe-table-column width="11%" field="timeLimit" title="故障时限(分钟)"></vxe-table-column>
+          <vxe-table-column width="13%" field="timeText" title="故障历时(分钟)"></vxe-table-column>
+          <vxe-table-column width="12%" field="netTime" title="修复净历时(分钟)"></vxe-table-column>
+          <vxe-table-column width="10%" field="mark" title="标记" :filters="TOPList" :filter-multiple="false" :filter-method="filterMethodStrict"></vxe-table-column>
+          <vxe-table-column width="10%" field="duty" title="责任专业" :filters="[{label:'广州责任',value:true},{label:'非广州责任',value:false}]" :filter-multiple="false" :filter-method="responsibleFilter"></vxe-table-column>
+          <vxe-table-column width="17%" field="reason" title="故障原因" show-overflow></vxe-table-column>
+        </vxe-table>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+
+export default {
+  name: 'timeout',
+  props: ['wywData', 'edit'],
+  watch: {
+    wywData() {
+      this.rawData = this.wywData;
+      this.count();
+    }
+  },
+  data() {
+    return {
+      timeCount: [],
+      timeoutList: [],
+      showList: [],
+      timeoutMode: 1,
+      rawData: [],
+      reduce: [{
+        id: '',
+        province: '',
+        time: 0,
+        maxTime: 0,
+        timeLimit: 0
+      }],
+      isAdd: false,
+      TOPList: [{
+        label: 'TOP33',
+        value: 'TOP33'
+      }, {
+        label: 'TOP210',
+        value: 'TOP210'
+      }, {
+        label: 'TOP800',
+        value: 'TOP800'
+      }]
+    }
+  },
+  created: function() {
+    this.init();
+  },
+  methods: {
+    init: function() {
+      console.log('timeout init');
+    },
+    count: function() {
+      let timeCount = [{
+        item: 'TOP33',
+        sum: 0,
+        timeout: 0,
+        rate: '100.0%',
+        time: 0,
+        timeSum: 0
+      }, {
+        item: 'TOP800家1-2级',
+        sum: 0,
+        timeout: 0,
+        rate: '100.0%',
+        time: 0,
+        timeSum: 0
+      }, {
+        item: 'TOP800家3-6级',
+        sum: 0,
+        timeout: 0,
+        rate: '100.0%',
+        time: 0,
+        timeSum: 0
+      }, {
+        item: '所有客户',
+        sum: 0,
+        timeout: 0,
+        rate: '100.0%',
+        time: 0,
+        timeSum: 0
+      }, {
+        item: 'TOP210',
+        sum: 0,
+        timeout: 0,
+        rate: '100.0',
+        time: 0,
+        timeSum: 0
+      }];
+      this.timeoutList = [];
+      this.showList = [];
+      for (let i in this.rawData) {
+        let data = this.rawData[i]
+        if (data.province == '广东省广州市' && data.is_assess == 1) {
+          let dutyFlag = data.responsible_province == '广州';
+          let timeoutFlag = data.time_out == '1' && dutyFlag;
+          let showFlag = timeoutFlag || Number(data.time) > Number(data.time_limit);
+          if (dutyFlag) {
+            timeCount[3].sum++;
+            timeCount[3].timeSum = timeCount[3].timeSum + Number(data.assessment_time);
+            timeCount[3].time = (timeCount[3].timeSum / timeCount[3].sum).toFixed(2);
+          }
+          if (timeoutFlag && dutyFlag) {
+            timeCount[3].timeout++;
+          }
+          timeCount[3].rate = Number((timeCount[3].sum - timeCount[3].timeout) / timeCount[3].sum * 100).toFixed(2) + '%';
+          if (data.assess_TOPN == '1' && dutyFlag) {
+            switch (data.level) {
+              case '一级':
+              case '二级':
+                timeCount[1].sum++;
+                timeCount[1].timeSum = timeCount[1].timeSum + Number(data.assessment_time);
+                timeCount[1].time = (timeCount[1].timeSum / timeCount[1].sum).toFixed(2);
+                if (timeoutFlag) {
+                  timeCount[1].timeout++;
+                }
+                timeCount[1].rate = Number((timeCount[1].sum - timeCount[1].timeout) / timeCount[1].sum * 100).toFixed(2) + '%';
+                break;
+              case '三级':
+              case '四级':
+              case '五级':
+              case '六级':
+                timeCount[2].sum++;
+                timeCount[2].timeSum = timeCount[2].timeSum + Number(data.assessment_time);
+                timeCount[2].time = (timeCount[2].timeSum / timeCount[2].sum).toFixed(2);
+                if (timeoutFlag) {
+                  timeCount[2].timeout++;
+                }
+                timeCount[2].rate = Number((timeCount[2].sum - timeCount[2].timeout) / timeCount[2].sum * 100).toFixed(2) + '%';
+                break;
+            }
+          }
+          //因为TOP33采取预计澄清的模式通报，dutyFlag为假的时候也显示以作参考
+          if (data.TOP33 == '1') {
+            showFlag = true;
+            if(dutyFlag){
+              timeCount[0].sum++;
+              timeCount[0].timeSum = timeCount[0].timeSum + Number(data.assessment_time);
+              timeCount[0].time = (timeCount[0].timeSum / timeCount[0].sum).toFixed(2);
+              if (timeoutFlag) {
+                timeCount[0].timeout++;
+              }
+              timeCount[0].rate = Number((timeCount[0].sum - timeCount[0].timeout) / timeCount[0].sum * 100).toFixed(2) + '%';
+            }
+          }
+
+          //TOP210计算的是净历时，需在最后计算
+          if (data.TOP210 == '1' && dutyFlag) {
+            timeoutFlag = timeoutFlag || Number(data.net_duration) > 120;
+            timeCount[4].sum++;
+            timeCount[4].timeSum = timeCount[4].timeSum + Number(data.net_duration);
+            timeCount[4].time = (timeCount[4].timeSum / timeCount[4].sum).toFixed(2);
+            if (Number(data.net_duration) > 120) {
+              timeCount[4].timeout++;
+            }
+            timeCount[4].rate = Number((timeCount[4].sum - timeCount[4].timeout) / timeCount[4].sum * 100).toFixed(2) + '%';
+          }
+
+          if (timeoutFlag || showFlag) {
+            let mark = "";
+            if (data.TOP33 == '1') {
+              mark = mark + 'TOP33 ';
+            }
+            if (data.assess_TOPN == '1') {
+              mark = mark + 'TOP800 '
+            }
+            if (data.TOP210 == '1') {
+              mark = mark + 'TOP210 ';
+            }
+            mark = mark.slice(0, -1);
+            let timeText = data.time;
+            if (parseInt(data.reduce_time) > 0) {
+              timeText = timeText + '(-' + data.reduce_time + '=' + data.assessment_time + ')';
+            }
+
+            let duty = data.major;
+            if (!dutyFlag) {
+              duty = data.responsible_province;
+            }
+
+            let timeoutItem = {
+              id: data.orderId,
+              timeLimit: data.time_limit,
+              time: data.time,
+              reduce_time: data.reduce_time,
+              timeText: timeText,
+              duty: duty,
+              netTime: data.net_duration,
+              reason: data.trouble_reason_symptom,
+              mark: mark,
+              responsible_province: data.responsible_province,
+            }
+            if (timeoutFlag) {
+              this.timeoutList.push(timeoutItem);
+            }
+            if (showFlag) {
+              this.showList.push(timeoutItem);
+            }
+          }
+        }
+      }
+      this.timeCount = timeCount;
+      this.reduce = [{
+        id: '',
+        province: '',
+        time: 0,
+        maxTime: 0,
+        timeLimit: 0
+      }];
+    },
+    cell_class: function({
+      row,
+      // rowIndex,
+      // column,
+      columnIndex
+    }) {
+      if (columnIndex == 2) {
+        if (Number(row.time) - Number(row.reduce_time) > Number(row.timeLimit)) {
+          return "cell_timeout";
+        }
+        if (Number(row.reduce_time) > 0) {
+          return "cell_not_responsible";
+        }
+      }
+      if (columnIndex == 3) {
+        if (row.mark.indexOf("TOP210") >= 0 && Number(row.netTime) > 120) {
+          return "cell_timeout";
+        }
+      }
+      if (columnIndex == 5) {
+        if (row.responsible_province != '广州') {
+          return 'cell_not_responsible'
+        }
+      }
+    },
+    addReduce: function() {
+      if (parseInt(this.reduce[0].time) > parseInt(this.reduce[0].maxTime)) {
+        this.$XModal.message({
+          message: '澄清时间不能大于故障历时',
+          status: 'warning'
+        });
+        return;
+      }
+
+      let self = this;
+      let data = new FormData();
+      data.append('id', this.reduce[0].id);
+      data.append('province', this.reduce[0].province);
+      data.append('time', this.reduce[0].maxTime);
+      data.append('reduce_time', this.reduce[0].time);
+      data.append('time_limit', this.reduce[0].timeLimit);
+
+      this.axios
+        .post('http://' + self.$global_msg.HOST + 'scripts/assess_order/add_reduce.php', data)
+        .then(function(res) {
+          if (res.data.status == 'success') {
+            if (res.data.row == '1') {
+              self.$XModal.message({
+                message: '修改成功'
+              });
+              for (let i in self.rawData) {
+                let data = self.rawData[i];
+                if (data.orderId == self.reduce[0].id) {
+                  data.reduce_time = self.reduce[0].time;
+                  if (self.reduce[0].province != '') {
+                    data.responsible_province = self.reduce[0].province;
+                  }
+                  let assess_time = parseInt(self.reduce[0].maxTime) - parseInt(self.reduce[0].time);
+                  data.assessment_time = assess_time;
+                  if (assess_time <= self.reduce[0].timeLimit) {
+                    data.time_out = '0';
+                  } else {
+                    data.time_out = '1';
+                  }
+                  self.rawData[i] = data;
+                  break;
+                }
+              }
+              self.count();
+            } else {
+              console.log(res);
+              self.$XModal.message({
+                message: '未找到工单或无改动',
+                status: 'warning'
+              });
+            }
+          } else {
+            alert(res.data.errMsg);
+          }
+        })
+        .catch(function(err) {
+          alert(err);
+        });
+    },
+    dbClick: function(e) {
+      if (!this.edit) {
+        return;
+      }
+      this.reduce[0].id = e.row.id;
+      this.reduce[0].maxTime = e.row.time;
+      this.reduce[0].timeLimit = e.row.timeLimit;
+      this.isAdd = !this.isAdd;
+    },
+    not_edit_id({
+      // column,
+      columnIndex
+    }) {
+      if (columnIndex === 0) {
+        return false
+      }
+      return true
+    },
+    filterMethodStrict: function({
+      row,
+      column,
+      option
+    }) {
+      return row[column.property].indexOf(option.value) >= 0
+    },
+    responsibleFilter: function({
+      row,
+      option
+    }) {
+      let flag = row.responsible_province == '广州';
+      return option.value == flag;
+    },
+    toDaily: function() {
+      let rd = this.$router.resolve({
+        name: 'daily',
+        params: {}
+      });
+      window.open(rd.href,'_blank');
+    },
+    toList: function() {
+      let rd = this.$router.resolve({
+        name: 'assessOrderList',
+        params: {}
+      });
+      window.open(rd.href,'_blank');
+    }
+  }
+}
+
+</script>
+<style>
+.timeout_container{
+  display: flex;
+  height: 100%;
+  width: 100%;
+}
+.timeout_container .timecount{
+  display: inline-block;
+  width:30%;
+  padding:0 1% 0 1%;
+  height: 100%;
+}
+.timeout_container .timeout{
+  display: inline-block;
+  width:66%;
+  padding:0 1% 0 1%;
+  height: 100%;
+}
+.timeout_container .cell_timeout{
+  color: red;
+}
+
+.timeout_container .cell_not_responsible{
+  color: #5ab1ef;
+}
+
+.timeout_container .title{
+  margin-bottom: 18px;
+  font-size: 18px;
+  font-family: STHeiti;
+  font-weight: bold;
+  position: relative;
+}
+.timeout_container .title #btn_daily{
+  position: absolute;
+  right:0 ;
+}
+
+.timeout_container .title #btn_list{
+  position: absolute;
+  right:0 ;
+}
+
+.timeout_container #btn_add{
+  margin-left: 30px;
+}
+</style>
