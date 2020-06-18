@@ -37,9 +37,8 @@
 </template>
 
 <script>
-var HOST = "10.117.195.193/gensmo/";
-var TOP33_sum = 20;
-var TOP33_time_sum = 1818.85;
+var TOP33_sum = 22;
+var TOP33_time_sum = 2294;
 Date.prototype.Format = function(fmt) { //author: meizz   
   var o = {
     "M+": this.getMonth() + 1, //月份   
@@ -415,7 +414,7 @@ export default {
       data.append('START', start);
       data.append('END', end);
       this.axios
-        .post('http://' + HOST + 'scripts/assess_order/get_order_by_datetime.php', data)
+        .post('http://' + self.$global_msg.HOST + 'scripts/assess_order/get_order_by_datetime.php', data)
         .then(function(res) {
           if (res.data.status == 'success') {
             self.rawData = res.data.result;
@@ -980,17 +979,14 @@ export default {
     },
     to100: function({
       cellValue,
-      // row,
-      rowIndex,
-      // column,
-      // columnIndex
+      row,
     }) {
-      switch (rowIndex) {
-        case 0:
-        case 1:
-        case 28:
+      switch (row.item) {
+        case '责任故障重复次数':
+        case 'TOP33责任故障次数':
+        case '发函投诉':
           return cellValue;
-        case 2:
+        case 'TOP33责任故障历时':
           return Number(cellValue).toFixed(2);
         default:
           if (cellValue != undefined) {

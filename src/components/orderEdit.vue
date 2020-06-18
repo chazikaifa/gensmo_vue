@@ -61,7 +61,7 @@
                 :editable="false"
                 value-format="yyyy-MM-dd HH:mm:ss"
                 @change="changeTime"
-                :disabled="order.step != '结单'">
+                :disabled="!edit || order.step != '结单'">
               </el-date-picker>
             </div>
           </el-col>
@@ -120,7 +120,7 @@
             <div class="label">19工单编号</div>
           </el-col>
           <el-col :span="11">
-            <div class="label">客户姓名</div>
+            <div class="label">电路编号</div>
           </el-col>
           <el-col :span="1"></el-col>
         </el-row>
@@ -296,13 +296,13 @@
           <el-col :span="1"></el-col>
         </el-row>
 
-        <el-row>
+        <el-row v-if="!newOrder">
           <el-col :span="1"></el-col>
           <el-col :span="22"><div class="label">故障进展</div></el-col>
           <el-col :span="1"></el-col>
         </el-row>
 
-        <el-row>
+        <el-row v-if="!newOrder">
           <el-col :span="1"></el-col>
           <el-col :span="22">
             <el-table 
@@ -348,16 +348,18 @@
                   <el-input 
                     v-else
                     v-model="scope.row.description"
+                    @blur="autoAddProcess(scope.row)"
                     size="mini">
                   </el-input>
                 </template>
               </el-table-column>
-              <el-table-column width="50" v-if="edit&&canDo.delete_process">
+              <el-table-column width="50" v-if="edit&&canDo.process_update">
                 <template slot-scope="scope">
                   <el-button type="danger" icon="el-icon-delete" size="mini" circle @click="deleteProcess(scope.$index)"></el-button>
                 </template>
               </el-table-column>
             </el-table>
+            <el-button style="width: 100%;margin-top: 12px" size="small" round  icon="el-icon-plus" type="info" v-if="edit&&canDo.process_update" @click="addProcess">新增进展</el-button>
           </el-col>
           <el-col :span="1"></el-col>
         </el-row>
@@ -370,7 +372,19 @@
 
         <el-row>
           <el-col :span="1"></el-col>
-          <el-col :span="22"><el-input v-model="order.remark" :disabled="!edit"></el-input></el-col>
+          <el-col :span="22"><el-input type="textarea" :autosize="{minRows:2}" style="word-break: break-all;" v-model="order.remark" :disabled="!edit"></el-input></el-col>
+          <el-col :span="1"></el-col>
+        </el-row>
+
+        <el-row>
+          <el-col :span="24"></el-col>
+        </el-row>
+
+        <el-row>
+          <el-col :span="1"></el-col>
+          <el-col :span="22">
+            <el-button style="width:100%" type="primary" @click="submit" :loading="isLoading">{{edit?'确认':'编辑'}}</el-button>
+          </el-col>
           <el-col :span="1"></el-col>
         </el-row>
 
@@ -384,6 +398,19 @@
 
 <script>
 
+function haveDateTime(str){
+  let reg = /[1-2][0-9]{3}-[0-9]{1,2}-[0-9]{1,2} [0-2][0-9]:[0-5][0-9]:[0-5][0-9]/g;
+  if(str.match(reg) == null){
+    return null;
+  }else{
+    let res = {
+      time:str.match(reg),
+      description:str.split(reg)
+    }
+    return res;
+  }
+}
+
 export default {
   name: 'OrderEdit',
   data() {
@@ -391,9 +418,11 @@ export default {
       token:'',
       user_name:'Unknown',
       pageLoading:true,
+      isLoading:false,
       canDo:{},
-      doList:['order_view','order_new','order_edit','update','getProcessList','process_add','process_delete'],
+      doList:['order_view','order_new','order_edit','update','getProcessList','process_update'],
       edit:false,
+      newOrder:false,
       stepList:[
         {label:'结单',value:'结单'},
         {label:'未结单',value:'未结单'},
@@ -494,7 +523,6 @@ export default {
     this.user_name = this.$cookies.get('user_name');
     this.id = this.$route.query.id;
     if(this.id != undefined){
-      // this.edit = this.$route.query.edit == 'true';
       let self = this;
       this.assess_query(this.doList).then(function(){
         self.edit = (self.$route.query.edit == 'true') && self.canDo.order_edit
@@ -502,7 +530,8 @@ export default {
       })
     }else{
       this.edit = true;
-      //new order
+      this.newOrder = true;
+      this.pageLoading = false;
     }
   },
   methods: {
@@ -548,13 +577,72 @@ export default {
           self.$message.error("[getProcessList]Network Error:"+e);
         })
     },
+    refreshProcessList:function(){
+      for(let i in this.processList){
+        this.processList[i].list_order = i
+      }
+    },
     deleteProcess:function(index){
       let self = this;
       this.$confirm('确认要删除这一条进展吗?','警告',{
         type:'warning'
       }).then(function(){
         self.processList.splice(index,1)
+        self.refreshProcessList();
+      }).catch(function(){})
+    },
+    addProcess:function(){
+      this.processList.push({
+        process_id:'New Process',
+        order_id:this.id,
+        time:'',
+        description:'',
+        mark:'',
+        list_order:-1
       })
+      this.refreshProcessList();
+    },
+    autoAddProcess: function(obj) {
+      let self = this;
+      let res = haveDateTime(obj.description)
+      if (res) {
+        this.$confirm("检测到进展包含时间，是否自动整理？", '提示', {
+            type: 'info'
+          })
+          .then(function() {
+            let index = Number(obj.list_order);
+            if (res.time.length > res.description.length) {
+              self.$message.error('字符串分割错误！')
+            } else {
+              if (res.time.length < res.description.length) {
+                if (res.description[0] != "") {
+                  self.processList[index].description = res.description[0].trim();
+                  res.description.splice(0, 1);
+                  index++;
+                } else {
+                  res.description.splice(0, 1);
+                  self.processList.splice(index, 1);
+                }
+              }
+              for (let i = 0; i < res.description.length; i++) {
+                if (res.description[i] != "") {
+                  let fd = new Date(res.time[i]).Format("yyyy-MM-dd hh:mm:ss");
+                  let newProcess = {
+                    process_id: "newProcess",
+                    order_id: self.id,
+                    description: res.description[i].trim(),
+                    time: fd,
+                    mark: "",
+                    list_order: index + ""
+                  }
+                  self.processList.splice(index, 0, newProcess);
+                }
+                index++;
+              }
+              self.refreshProcessList();
+            }
+          }).catch(function(){})
+      }
     },
     deleteProcessList:function(callback){
       let self = this;
@@ -574,6 +662,182 @@ export default {
           console.log("[deleteProcessByOrderId]"+e);
           self.$message.error("[deleteProcessByOrderId]Network Error:"+e);
         })
+    },
+    updateProcessList:function(callback){
+      let self = this;
+      let data = new FormData();
+      data.append('token', this.token);
+
+      let json = {sum:0,data:[]};
+      for(let i in this.processList){
+        let arr = [];
+        arr.push(this.processList[i].process_id);
+        arr.push(this.processList[i].order_id);
+        arr.push(this.processList[i].time);
+        arr.push(this.processList[i].description);
+        arr.push(this.processList[i].list_order);
+        arr.push(this.processList[i].mark);
+        json.data.push(arr)
+      }
+      data.append('DATA',JSON.stringify(json));
+      self.deleteProcessList(function(){
+        self.axios
+        .post('http://' + self.$global_msg.HOST + 'scripts/order/add_process_list.php', data)
+        .then(function(res){
+          if(res.data.status == 'success'){
+            callback()
+          }else{
+            self.$message.error("[updateProcessList]error:"+res.data.errMsg);
+          }
+        })
+        .catch(function(e){
+          console.log("[updateProcessList]"+e);
+          self.$message.error("[updateProcessList]Network Error:"+e);
+        })
+      })
+    },
+    getOrderData:function(){
+      let paramList = ['id','name','start_time','end_time','step','trouble_symptom','link_id','process','circuit_number','contact_number','contact_name','area','is_trouble','is_remote','trouble_class','trouble_reason','business_type','remark','major'];
+      let data = new FormData();
+      for(let i in paramList){
+        data.append(paramList[i],this.order[paramList[i]]==undefined?'':this.order[paramList[i]])
+      }
+      return data;
+    },
+    orderUpdate:function(callback){
+      let self = this;
+      let data = this.getOrderData();
+      data.append('token', this.token);
+
+      this.axios
+        .post('http://' + self.$global_msg.HOST + 'scripts/order/update.php', data)
+        .then(function(res){
+          if(res.data.status == 'success'){
+            callback();
+          }else{
+            self.$message.error("[orderUpdate]error:"+res.data.errMsg);
+          }
+        })
+        .catch(function(e){
+          console.log("[orderUpdate]"+e);
+          self.$message.error("[orderUpdate]Network Error:"+e);
+        })
+    },
+    orderNew:function(callback){
+      let self = this;
+      let data = this.getOrderData();
+      data.append('token', this.token);
+
+      this.axios
+        .post('http://' + self.$global_msg.HOST + 'scripts/order/new.php', data)
+        .then(function(res){
+          if(res.data.status == 'success'){
+            callback(res.data.id);
+          }else{
+            self.$message.error("[orderUpdate]error:"+res.data.errMsg);
+          }
+        })
+        .catch(function(e){
+          console.log("[orderUpdate]"+e);
+          self.$message.error("[orderUpdate]Network Error:"+e);
+        })
+    },
+    timeCheck:function(){
+      if(!this.order.start_time){
+        return {result:false,msg:'请输入故障发生时间'}
+      }
+      if(!this.order.name){
+        return {result:false,msg:'请输入客户名称'}
+      }
+      if(this.order.step == '结单'){
+        if (!this.order.end_time) {
+          return {result:false,msg:'请输入结单时间'}
+        }
+        if(new Date(this.order.end_time) - new Date(this.order.start_time) < 0){
+          return {result:false,msg:'结单时间小于故障发生时间'}
+        }
+      }
+      if(this.processList.length > 0){
+        let suspend = false;
+        let last_time = new Date(this.order.start_time);
+        for(let i in this.processList){
+          let p = this.processList[i]
+          if(!p.time){
+            return {result:false,msg:'请输入进展时间'}
+          }
+          if(p.mark == 'set_suspend'){
+            if(suspend){
+              return {result:false,msg:'请先解挂后再挂起'}
+            }
+            suspend = true;
+          }
+          if(p.mark == 'unset_suspend'){
+            if(!suspend){
+              return {result:false,msg:'错误的解挂标志'}
+            }
+            suspend = false;
+          }
+          let time = new Date(p.time);
+          if(time - last_time < 0){
+            return {result:false,msg:'进展时间存在交错'}
+          }
+          last_time = time;
+        }
+        if(this.order.step == '结单' && new Date(this.order.end_time) - last_time < 0){
+          return {result:false,msg:'结单时间小于最后进展时间'}
+        }
+      }
+      return {result:true};
+    },
+    submit:function(){
+      let self = this;
+      if(this.newOrder){
+        let check = this.timeCheck();
+        if(!check.result){
+          this.$message.error(check.msg);
+          return;
+        }
+        this.isLoading = true;
+        this.orderNew(function(id){
+          self.$router.replace({
+            name: 'orderEdit',
+            query: {
+              id:id,
+              edit:false
+            }
+          })
+          self.isLoading = false;
+        });
+      }else{
+        if(this.edit){
+          let check = this.timeCheck();
+          if(!check.result){
+            this.$message.error(check.msg);
+            return;
+          }
+          this.isLoading = true;
+          this.updateProcessList(function(){
+            self.orderUpdate(function(){
+              self.$router.replace({
+                name: 'orderEdit',
+                query: {
+                  id:self.id,
+                  edit:'false'
+                }
+              })
+              self.isLoading = false;
+            })
+          });
+        }else{
+          self.$router.replace({
+            name: 'orderEdit',
+            query: {
+              id:self.id,
+              edit:'true'
+            }
+          })
+        }
+      }
     },
     troubleClassChange:function(e){
       this.order.trouble_reason = '';
@@ -606,10 +870,6 @@ export default {
         case 'unset_suspend':  
           return '解挂';
       }
-    },
-    submit:function(){
-      this.$message.info('submit')
-      this.isLoading = true;
     },
     assess_query:async function(list){
       let self = this;

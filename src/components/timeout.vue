@@ -103,7 +103,7 @@ export default {
   },
   methods: {
     init: function() {
-      console.log('timeout init');
+      console.log('[timeout]init');
     },
     count: function() {
       let timeCount = [{

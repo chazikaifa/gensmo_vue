@@ -1,9 +1,9 @@
 <template>
   <div id="app">
-    <keep-alive>
-      <router-view v-if="$route.meta.keepAlive"/>
+    <keep-alive >
+      <router-view v-if="$route.meta.keepAlive" :key="key"/>
     </keep-alive>
-    <router-view v-if="!$route.meta.keepAlive"/>
+    <router-view  v-if="!$route.meta.keepAlive" :key="key"/>
   </div>
 </template>
 
@@ -11,6 +11,11 @@
 export default {
   name: 'App',
   components: {
+  },
+  computed:{
+    key(){
+      return this.$route.name !== undefined ? this.$route.query + new Date() : this.$route + new Date();
+    }
   }
 }
 </script>

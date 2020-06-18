@@ -36,14 +36,20 @@
 <script>
 var echarts = require('echarts');
 
+// const DEFAULT_COLORS = [
+//   '#19d4ae', '#5ab1ef', '#fa6e86',
+//   '#ffb980', '#0067a6', '#c4b4e4',
+//   '#d87a80', '#9cbbff', '#d9d0c7',
+//   '#87a997', '#d49ea2', '#5b4947',
+//   '#7ba3a8'
+// ]
 const DEFAULT_COLORS = [
-  '#19d4ae', '#5ab1ef', '#fa6e86',
-  '#ffb980', '#0067a6', '#c4b4e4',
-  '#d87a80', '#9cbbff', '#d9d0c7',
-  '#87a997', '#d49ea2', '#5b4947',
-  '#7ba3a8'
-]
-
+  '#5B9BE7', '#ED7D31', '#A5A5A5',
+  '#FFC000', '#4472C4', '#70AD47',
+  '#255E91', '#9E480E', '#636363',
+  '#997300', '#264478', '#43682B',
+  '#7CAFDD'
+];
 var HOST = "10.117.195.193/gensmo/";
 var TOP33_sum = 13;
 var TOP33_time_sum = 1300.88;
@@ -248,7 +254,7 @@ export default {
             self.assess_data = [];
             for(let i in self.rawData){
               let data = self.rawData[i];
-              if(data.responsible_province == '广州'){
+              if(data.responsible_province == '广州' || data.province == '广东省广州市' && data.responsible_province == '用户'){
                 self.assess_data_all.push(data);
                 if(new Date(data.end_time) > start){
                   self.assess_data.push(data);
@@ -371,7 +377,7 @@ export default {
       this.result = json_arr;
       this.submit_text = '重新计算';
       this.loading = false;
-      console.log(this.chart_list);
+      //console.log(this.chart_list);
     },
     savePic:async function(url){
       let result = ''
@@ -389,9 +395,13 @@ export default {
       this.create_loading = true;
       this.url_OK = 0;
       for(let i in this.chart_list){
-        this.savePic(this.chart_list[i].chart.getDataURL()).then(function(res){
+        let chart = this.chart_list[i].chart;
+        let ctx = chart.getDom().firstChild.firstChild.getContext('2d');
+        ctx.strokeStyle = "#636363";
+        ctx.strokeRect(0,0,chart.getWidth(),chart.getHeight());
+        this.savePic(chart.getDataURL()).then(function(res){
           let json =  self.chart_list[i].json;
-          let option = {path:res,width:'120mm',height:'71mm',ratio:false}
+          let option = {path:res,width:'147mm',height:'87mm',ratio:false}
           json.value = option;
           self.result.push(json);
           self.url_OK++;
@@ -456,7 +466,7 @@ export default {
       // return myChart.getDataURL();
       return myChart;
     },
-    getOption:function(type,series,xAxis=[]){
+    getOption:function(type,series,xAxis=[],legend=[]){
       let option;
       switch(type){
         case 'pie':
@@ -470,6 +480,12 @@ export default {
             title: {
               show: false
             },
+            grid:{
+              x:10,
+              y:25,
+              x2:10,
+              y2:25
+            },
             animation:false,
             tooltip: {},
             series: [series],
@@ -481,8 +497,15 @@ export default {
             title: {
               show: false
             },
+            grid:{
+              x:10,
+              y:25,
+              x2:10,
+              y2:25
+            },
             animation:false,
             tooltip: {},
+            legend:legend,
             xAxis: {
               data: xAxis,
               splitLine:{
@@ -573,6 +596,7 @@ export default {
           obj.last_text.data,
           now
         ];
+        let legend = {show:true,top:20};
         let series = [{
           name: '19系统',
           type: 'bar',
@@ -585,7 +609,8 @@ export default {
           ],
           label:{
             show:true
-          }
+          },
+          barMaxWidth:60
         },{
           name: '本地',
           type: 'bar',
@@ -600,7 +625,7 @@ export default {
             show:true
           }
         }];
-        let option = self.getOption('bar',series,xAxis);
+        let option = self.getOption('bar',series,xAxis,legend);
         await self.$nextTick(function(){
           chart = self.getImg(name,option)
         })
@@ -1690,6 +1715,8 @@ export default {
         for(let i=0;i<arr.length;i++){
           if(arr[i].sum <= 1){
             arr.splice(i);
+          }else if(arr[i].name == ''||arr[i].name == '-'||arr[i].name == ' '){
+            arr.splice(i);
           }
         }
         let len = arr.length > 5 ? 5 : arr.length;
@@ -1727,7 +1754,8 @@ export default {
           data: [],
           label:{
             show:true
-          }
+          },
+          barMaxWidth:60
         }];        
         for(let i in data_list){
           xAxis.push(data_list[i].name);
@@ -2434,6 +2462,8 @@ export default {
         for(let i=0;i<arr.length;i++){
           if(arr[i].sum <= 1){
             arr.splice(i);
+          }else if(arr[i].name == ''||arr[i].name == '-'||arr[i].name == ' '){
+            arr.splice(i);
           }
         }
         let len = arr.length > 5 ? 5 : arr.length;
@@ -2471,7 +2501,8 @@ export default {
           data: [],
           label:{
             show:true
-          }
+          },
+          barMaxWidth:60
         }];        
         for(let i in data_list){
           xAxis.push(data_list[i].name);

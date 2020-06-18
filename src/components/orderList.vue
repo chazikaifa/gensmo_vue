@@ -166,6 +166,11 @@ export default {
       immediate:true,
       handler(newVal,oldVal){
         this.step = this.params.step;
+        this.orderID = '';
+        this.name = '';
+        this.start_time = '';
+        this.end_time = '';
+        this.number = '';
         if(!this.first_run){
           this.getData();
         }
@@ -257,16 +262,21 @@ export default {
             self.sum = Number(res.data.sum);
             cb();
           }else{
-            self.$message.error("错误："+res.data.errMsg);
+            self.$message.error("错误:"+res.data.errMsg);
+            cb();
           }
         }).catch(function(e){
           self.$message.error("错误:"+e);
+          cb();
         });
     },
     submit:function(){
-      this.$message.info('submit')
+      let self = this;
       this.isLoading = true;
       this.show_search = false;
+      this.getList(function(){
+        self.isLoading = false;
+      })
     },
     refresh:function(){
       this.isLoading = true;
@@ -332,10 +342,10 @@ export default {
           type:'warning'
         }).then(function(){
           let data = new FormData();
-          data.append('token', this.token);
+          data.append('token', self.token);
           data.append('id', id);
           data.append('step', '已撤销');
-          this.axios
+          self.axios
           .post('http://' + self.$global_msg.HOST + 'scripts/order/update.php', data)
           .then(function(res) {
             if(res.data.status == 'success'){

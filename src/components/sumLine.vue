@@ -6,7 +6,6 @@
 
 <script>
 
-//var HOST = "10.117.195.193/gensmo/";
 Date.prototype.Format = function(fmt)
 { //author: meizz   
   var o = {   
@@ -27,31 +26,6 @@ Date.prototype.Format = function(fmt)
 }
 export default {
   name: 'sumLine',
-  props:['wywData','localData'],
-  watch:{
-    wywData(){
-      this.rawData = this.wywData;
-      this.getSum();
-      if(this.dataReady && this.dataLocalReady){
-        this.dataLocalReady = false;
-      }
-      this.dataReady = true;
-      if(this.dataReady && this.dataLocalReady){
-        this.get_union();
-      }
-    },
-    localData(){
-      this.rawLocalData = this.localData;
-      this.getLocalSum();
-      if(this.dataReady && this.dataLocalReady){
-        this.dataReady = false;
-      }
-      this.dataLocalReady = true;
-      if(this.dataReady && this.dataLocalReady){
-        this.get_union();
-      }
-    }
-  },
   data(){
     return{
       sumExtend:{
@@ -98,11 +72,11 @@ export default {
         columns:['日期','故障量','责任故障量'],
         rows:[],
       },
-      dataReady:false,
-      dataLocalReady:false,
-      rawData:this.data,
-      rawLocalData:this.localData,
-      sum:0,
+      ready:0,
+      rawData:[],
+      rawLocalData:[],
+      rawDataLast:[],
+      rawLocalDataLast:[],
       timer:undefined,
       playing:true
     }
@@ -112,8 +86,105 @@ export default {
   },
   methods:{
     init:function(){
-      console.log('sum init');
-      this.timer = setTimeout(this.change,5000);
+      console.log('[sumLine]init');
+      this.getData();
+    },
+    getData:function(){
+      let self = this;
+      let end = new Date();
+      end.setDate(end.getDate()-1);
+      end.setHours(23);
+      end.setMinutes(59);
+      end.setSeconds(59);
+
+      let start = new Date(end);
+      start.setDate(1);
+      start.setHours(0);
+      start.setMinutes(0);
+      start.setSeconds(0);
+
+      let lastEnd = new Date(end);
+      lastEnd.setFullYear(end.getFullYear()-1);
+      let lastStart = new Date(start);
+      lastStart.setFullYear(end.getFullYear()-1);
+
+      this.getOrder(start.Format('yyyy-MM-dd hh:mm:ss'),end.Format('yyyy-MM-dd hh:mm:ss'),function(res){
+        if(res.data.status == 'success'){
+          self.rawData = res.data.result;
+          self.ready++;
+          self.getSum();
+          if(self.ready >= 4){
+            self.get_union();
+          }
+        }else{
+          self.$message.error("[orderCompare]rawDataLast Error:"+res.data.errMsg);
+        }
+      })
+
+      this.getOrder(lastStart.Format('yyyy-MM-dd hh:mm:ss'),lastEnd.Format('yyyy-MM-dd hh:mm:ss'),function(res){
+        if(res.data.status == 'success'){
+          self.rawDataLast = res.data.result;
+          self.ready++;
+          if(self.ready >= 4){
+            self.get_union();
+          }
+        }else{
+          self.$message.error("[orderCompare]rawData Error:"+res.data.errMsg);
+        }
+      }) 
+
+      this.getLocalOrder(start.Format('yyyy-MM-dd hh:mm:ss'),end.Format('yyyy-MM-dd hh:mm:ss'),function(res){
+        if(res.data.status == 'success'){
+          self.rawLocalData = res.data.result;
+          self.ready++;
+          self.getLocalSum();
+          if(self.ready >= 4){
+            self.get_union();
+          }
+        }else{
+          self.$message.error("[orderCompare]rawLocalData Error:"+res.data.errMsg);
+        }
+      })
+
+      this.getLocalOrder(lastStart.Format('yyyy-MM-dd hh:mm:ss'),lastEnd.Format('yyyy-MM-dd hh:mm:ss'),function(res){
+        if(res.data.status == 'success'){
+          self.rawLocalDataLast = res.data.result;
+          self.ready++;
+          if(self.ready >= 4){
+            self.get_union();
+          }
+        }else{
+          self.$message.error("[orderCompare]rawLocalDataLast Error:"+res.data.errMsg);
+        }
+      })
+    },
+    getOrder:function(start,end,cb){
+      let self = this;
+      let data = new FormData();
+      data.append('START',start);
+      data.append('END',end);
+      this.axios
+        .post('http://'+this.$global_msg.HOST+'scripts/assess_order/get_gz_order_by_datetime.php',data)
+        .then(function(res){
+          cb(res);
+        })
+        .catch(function(err){
+          self.$message.error("[orderCompare]getOrder Error:"+err);
+        });
+    },
+    getLocalOrder:function(start,end,cb){
+      let localData = new FormData();
+      localData.append('step','');
+      localData.append('end_time_start',start);
+      localData.append('end_time_end',end);
+      this.axios
+        .post('http://'+this.$global_msg.HOST+'scripts/getList.php',localData)
+        .then(function(res){
+          cb(res);
+        })
+        .catch(function(err){
+          self.$message.error("[orderCompare]getLocalOrder Error:"+err);
+        })
     },
     getSum(){
       let dateArr = [];
@@ -133,7 +204,7 @@ export default {
 
       for(let x in this.rawData){
         let data = this.rawData[x];
-        if(this.rawData[x].responsible_province != '广州'){
+        if(this.rawData[x].province != '广东省广州市' || this.rawData[x].responsible_province != '广州' && this.rawData[x].responsible_province != '用户'){
           continue;
         }
         let time = new Date(data.end_time);
@@ -268,6 +339,7 @@ export default {
         show:true,
         text:this.sumDataArray.title[0]
       }
+      this.timer = setTimeout(this.change,5000);
     },
     change:function(){
       if(this.timer != undefined){

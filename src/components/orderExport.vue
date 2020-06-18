@@ -173,6 +173,7 @@ export default {
           if(res.data.status == 'success'){
             if(res.data.status.sum == 0){
               self.$message.warning("查无记录，请重新选择条件！");
+              cb();
             }else{
               self.$confirm('成功查询到'+res.data.sum+'条记录,是否确认导出？','提示',{
                 confirmButtonText:'确定',

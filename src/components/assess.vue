@@ -1,10 +1,10 @@
 <template>
   <div class="container">
     <div class='quter'>
-     <sumLine :wywData="rawData" :localData="rawLocalData"></sumLine>
+     <sumLine></sumLine>
     </div>
     <div class='quter'>
-      <customerHis :wywData="rawData" :localData="rawLocalData"></customerHis>
+      <orderCompare></orderCompare>
     </div>
     <timeout :wywData="rawData" :edit="edit" class="half"></timeout>
     <!-- <div id="import"><a href="javascript:void(0)" @click="import19">{{import_text}}</a><input ref="filElem" type="file" @change="get_file" /></div> -->
@@ -13,7 +13,7 @@
 
 <script>
 import sumLine from './sumLine';
-import customerHis from './customerHis';
+import orderCompare from './orderCompare';
 import timeout from './timeout';
 
 Date.prototype.Format = function(fmt)   
@@ -39,7 +39,7 @@ export default {
   name: 'assess',
   components:{
     sumLine:sumLine,
-    customerHis:customerHis,
+    orderCompare:orderCompare,
     timeout:timeout
   },
   data(){
@@ -60,7 +60,7 @@ export default {
       if(this.$route.query.edit == 1){
         this.edit = true;
       }
-      let end = new Date("2020-06-01 12:00:00");
+      let end = new Date();
       end.setDate(end.getDate()-1);
       end.setHours(23);
       end.setMinutes(59);
