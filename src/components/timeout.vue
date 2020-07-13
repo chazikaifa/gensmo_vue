@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div v-loading="loading" element-loading-background="#222933">
     <div class="timeout_container">
       <div class="timecount">
         <div class=title>
@@ -64,15 +64,11 @@
 
 export default {
   name: 'timeout',
-  props: ['wywData', 'edit'],
-  watch: {
-    wywData() {
-      this.rawData = this.wywData;
-      this.count();
-    }
-  },
   data() {
     return {
+      token:'',
+      canDo:{},
+      doList:['getAssessOrder','updateAssessOrder'],
       timeCount: [],
       timeoutList: [],
       showList: [],
@@ -95,15 +91,56 @@ export default {
       }, {
         label: 'TOP800',
         value: 'TOP800'
-      }]
+      }],
+      loading:true,
     }
   },
   created: function() {
+    let self = this;
+    this.token = this.$cookies.get('user_token');
+    this.assess_query(this.doList).then(function(){
+      if(self.canDo.getAssessOrder){
+        self.init();
+      }else{
+        self.$message.error('[timeout]:没有接口权限!')
+      }
+    })
     this.init();
   },
   methods: {
     init: function() {
-      console.log('[timeout]init');
+      let self = this;
+      let end = new Date();
+      end.setDate(end.getDate()-1);
+      end.setHours(23);
+      end.setMinutes(59);
+      end.setSeconds(59);
+      let start = new Date(end);
+      start.setDate(1);
+      start.setHours(0);
+      start.setMinutes(0);
+      start.setSeconds(0);
+      this.getOrder(start.Format('yyyy-MM-dd hh:mm:ss'),end.Format('yyyy-MM-dd hh:mm:ss'),function(res){
+        self.count();
+        self.rawData = res.data.result
+      })
+    },
+    getOrder:function(start,end,cb){
+      let self = this;
+      let data = new FormData();
+      data.append('START',start);
+      data.append('END',end);
+      data.append('province','广东省广州市');
+      data.append('token',self.token);
+      this.axios
+        .post('http://'+this.$global_msg.HOST+'scripts/assess_order/get_gz_order_by_datetime.php',data)
+        .then(function(res){
+          cb(res);
+        })
+        .catch(function(err){
+          self.$message.error("[timeout]getOrder Error:"+err);
+          console.log(err)
+        });
     },
     count: function() {
       let timeCount = [{
@@ -255,6 +292,13 @@ export default {
         }
       }
       this.timeCount = timeCount;
+
+      //表格数据更改渲染不能同步完成，等一秒再解除loading
+      let self = this;
+      setTimeout(function(){
+        self.loading = false
+      },1000)
+
       this.reduce = [{
         id: '',
         province: '',
@@ -304,15 +348,13 @@ export default {
       data.append('time', this.reduce[0].maxTime);
       data.append('reduce_time', this.reduce[0].time);
       data.append('time_limit', this.reduce[0].timeLimit);
-
+      data.append('token',this.token);
       this.axios
         .post('http://' + self.$global_msg.HOST + 'scripts/assess_order/add_reduce.php', data)
         .then(function(res) {
           if (res.data.status == 'success') {
             if (res.data.row == '1') {
-              self.$XModal.message({
-                message: '修改成功'
-              });
+              self.$message.success('修改成功')
               for (let i in self.rawData) {
                 let data = self.rawData[i];
                 if (data.orderId == self.reduce[0].id) {
@@ -334,21 +376,19 @@ export default {
               self.count();
             } else {
               console.log(res);
-              self.$XModal.message({
-                message: '未找到工单或无改动',
-                status: 'warning'
-              });
+              self.$message.warning('未找到工单或无改动');
             }
           } else {
-            alert(res.data.errMsg);
+            self.$message.error('[addReduce]ERROR:'+res.data.errMsg)
           }
         })
         .catch(function(err) {
-          alert(err);
+          self.$message.error('[addReduce]NETWOKR ERROR:'+err)
+          console.log(err);
         });
     },
     dbClick: function(e) {
-      if (!this.edit) {
+      if (!this.canDo.updateAssessOrder) {
         return;
       }
       this.reduce[0].id = e.row.id;
@@ -392,6 +432,33 @@ export default {
         params: {}
       });
       window.open(rd.href,'_blank');
+    },
+    assess_query:async function(list){
+      let self = this;
+      for(let i in list){
+        await this.canDoQuery(list[i]).then(function(res){
+          self.canDo[list[i]] = res;
+        })
+      }
+    },
+    canDoQuery:async function(op){
+      let data = new FormData();
+      data.append('token', this.token);
+      data.append('operation',op);
+      let canDo = false;
+      await this.axios
+        .post('http://' + this.$global_msg.HOST + 'scripts/system/canDoQuery.php', data)
+        .then(function(res) {
+          if(res.data.status == 'success'){
+            canDo = true;
+          }else{
+            console.log("can NOT do "+op+":"+res.data.errMsg);
+          }
+        })
+        .catch(function(e){
+          console.log("query error:"+e)
+        })
+      return canDo;
     }
   }
 }

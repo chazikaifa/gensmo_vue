@@ -1,6 +1,7 @@
 <template>
-  <div>
-    <ve-line :data="SumData" :extend="sumExtend" ></ve-line>
+  <div class="container">
+    <ve-line v-if="sumDataArray.flag > 1" v-loading="loading" element-loading-background="#222933" :data="showData" :extend="extend" :settings="settings"></ve-line>
+    <ve-histogram v-else v-loading="loading" element-loading-background="#222933" :data="showData" :extend="extend" :settings="settings"></ve-histogram>
   </div>
 </template>
 
@@ -28,10 +29,29 @@ export default {
   name: 'sumLine',
   data(){
     return{
-      sumExtend:{
+      token:'',
+      canDo:{},
+      doList:['getAssessOrder','getList'],
+      extend:{
         title:{
           show:true,
-          text:'故障量标题'
+          text:'19总体故障量'
+        },
+        series:{
+          markPoint:{
+            symbol:'circle',
+            symbolSize:1,
+            data:[]
+          },
+        },
+        legend:{
+          bottom:'5%'
+        },
+        yAxis:function(item){
+          item[1].splitLine = {
+            show:false
+          }
+          return item;
         },
         toolbox:{
           show:true,
@@ -63,14 +83,23 @@ export default {
       sumDataArray:{
         length:4,
         flag:0,
-        title:['19故障量','本地故障量','总体故障量','总体责任故障量'],
-        columns:[['日期','故障量','责任故障量'],['日期','故障量','责任故障量'],['日期','19工单','本地工单'],['日期','19工单','本地工单']],
+        title:['19总体故障量','19责任故障量','本地故障量','总体故障量'],
+        columns:[['日期','去年故障量','故障量','同比'],['日期','去年故障量','故障量','同比'],['日期','故障量','责任故障量'],['日期','19责任故障','19非责任故障','本地责任故障','本地非责任故障']],
         rows:[],
-        loading:true,
+        area:[false,false,false,true],
+        markPointData:[[],[],[],[]]
       },
-      SumData:{
-        columns:['日期','故障量','责任故障量'],
+      showData:{
+        columns:['日期','故障量','去年故障量','同比'],
         rows:[],
+      },
+      settings:{
+        stack:{
+          '总故障量':['19责任故障','19非责任故障','本地责任故障','本地非责任故障'],
+        },
+        showLine:['同比'],
+        yAxisType:['value','percent'],
+        axisSite:{right:['同比']}
       },
       ready:0,
       rawData:[],
@@ -78,15 +107,23 @@ export default {
       rawDataLast:[],
       rawLocalDataLast:[],
       timer:undefined,
-      playing:true
+      playing:true,
+      loading:true
     }
   },
   created:function(){
-    this.init();
+    let self = this;
+    this.token = this.$cookies.get('user_token');
+    this.assess_query(this.doList).then(function(){
+      if(self.canDo.getAssessOrder && self.canDo.getList){
+        self.init();
+      }else{
+        self.$message.error('[sumLine]:没有接口权限！')
+      }
+    })
   },
   methods:{
     init:function(){
-      console.log('[sumLine]init');
       this.getData();
     },
     getData:function(){
@@ -112,12 +149,12 @@ export default {
         if(res.data.status == 'success'){
           self.rawData = res.data.result;
           self.ready++;
-          self.getSum();
+          // self.getSum();
           if(self.ready >= 4){
             self.get_union();
           }
         }else{
-          self.$message.error("[orderCompare]rawDataLast Error:"+res.data.errMsg);
+          self.$message.error("[sumLine]rawDataLast Error:"+res.data.errMsg);
         }
       })
 
@@ -129,7 +166,7 @@ export default {
             self.get_union();
           }
         }else{
-          self.$message.error("[orderCompare]rawData Error:"+res.data.errMsg);
+          self.$message.error("[sumLine]rawData Error:"+res.data.errMsg);
         }
       }) 
 
@@ -142,7 +179,7 @@ export default {
             self.get_union();
           }
         }else{
-          self.$message.error("[orderCompare]rawLocalData Error:"+res.data.errMsg);
+          self.$message.error("[sumLine]rawLocalData Error:"+res.data.errMsg);
         }
       })
 
@@ -154,7 +191,7 @@ export default {
             self.get_union();
           }
         }else{
-          self.$message.error("[orderCompare]rawLocalDataLast Error:"+res.data.errMsg);
+          self.$message.error("[sumLine]rawLocalDataLast Error:"+res.data.errMsg);
         }
       })
     },
@@ -163,27 +200,32 @@ export default {
       let data = new FormData();
       data.append('START',start);
       data.append('END',end);
+      data.append('province','广东省广州市');
+      data.append('token',self.token);
       this.axios
         .post('http://'+this.$global_msg.HOST+'scripts/assess_order/get_gz_order_by_datetime.php',data)
         .then(function(res){
           cb(res);
         })
         .catch(function(err){
-          self.$message.error("[orderCompare]getOrder Error:"+err);
+          self.$message.error("[sumLine]getOrder Error:"+err);
+          console.log(err)
         });
     },
     getLocalOrder:function(start,end,cb){
+      let self = this;
       let localData = new FormData();
       localData.append('step','');
       localData.append('end_time_start',start);
       localData.append('end_time_end',end);
+      localData.append('token',this.token);
       this.axios
-        .post('http://'+this.$global_msg.HOST+'scripts/getList.php',localData)
+        .post('http://'+this.$global_msg.HOST+'scripts/order/getList.php',localData)
         .then(function(res){
           cb(res);
         })
         .catch(function(err){
-          self.$message.error("[orderCompare]getLocalOrder Error:"+err);
+          self.$message.error("[sumLine]getLocalOrder Error:"+err);
         })
     },
     getSum(){
@@ -261,7 +303,7 @@ export default {
           }
         }
       }
-      this.sumDataArray.rows[1] = row;
+      this.sumDataArray.rows[2] = row;
     },
     get_union:function(){
       let dateArr = [];
@@ -275,35 +317,53 @@ export default {
 
       let union_row1 = [];
       let union_row2 = [];
+      let union_row3 = [];
 
-      for(let i=0;i<dayNow+1;i++){
+      for(let i=0;i<dayNow;i++){
         dateArr.push(new Date(now.setDate(i+1)));
-        union_row1.push({'日期':monthNow+'月'+(i+1)+'日','19工单':0,'本地工单':0});
-        union_row2.push({'日期':monthNow+'月'+(i+1)+'日','19工单':0,'本地工单':0});
+        union_row1.push({'日期':monthNow+'月'+(i+1)+'日','19责任故障':0,'19非责任故障':0,'本地责任故障':0,'本地非责任故障':0,'合计':0});
+        union_row2.push({'日期':monthNow+'月'+(i+1)+'日','故障量':0,'去年故障量':0,'同比':0});
+        union_row3.push({'日期':monthNow+'月'+(i+1)+'日','故障量':0,'去年故障量':0,'同比':0});
       }
-      union_row1.pop();
-      union_row2.pop();
+      dateArr.push(new Date(now.setDate(dayNow+1)));
 
       for(let x in this.rawData){
         let data = this.rawData[x];
-        if(this.rawData[x].responsible_province != '广州'){
+        if(data.province != '广东省广州市' || data.responsible_province != '广州' && data.responsible_province != '用户'){
           continue;
         }
         let time = new Date(data.end_time);
         for(let i=0;i<dayNow;i++){
           if(time > dateArr[i] && time < dateArr[i+1]){
-            union_row1[i]['19工单'] = union_row1[i]['19工单'] + 1;
-            if(data.is_assess == '1'){
-              union_row2[i]['19工单'] = union_row2[i]['19工单'] + 1;
+            if(data.is_assess == '1' && data.responsible_province == '广州'){
+              union_row1[i]['19责任故障'] = union_row1[i]['19责任故障'] + 1;
+              union_row3[i]['故障量'] = union_row3[i]['故障量'] + 1;
+            }else{
+              union_row1[i]['19非责任故障'] = union_row1[i]['19非责任故障'] + 1;
+              union_row2[i]['故障量'] = union_row2[i]['故障量'] + 1;
             }
+            union_row1[i]['合计'] = union_row1[i]['合计'] + 1;
             break;
           }
         }
-        if(time > dateArr[dayNow]){
-          union_row1[dayNow]['19工单'] = union_row1[dayNow]['19工单'] + 1;
-          if(data.is_assess == '1'){
-              union_row2[dayNow]['19工单'] = union_row2[dayNow]['19工单'] + 1;
+      }
+
+      for(let x in this.rawDataLast){
+        let data = this.rawDataLast[x];
+        if(data.province != '广东省广州市' || data.responsible_province != '广州' && data.responsible_province != '用户'){
+          continue;
+        }
+        let time = new Date(data.end_time);
+        time.setFullYear(time.getFullYear()+1);
+        for(let i=0;i<dayNow;i++){
+          if(time > dateArr[i] && time < dateArr[i+1]){
+            if(data.is_assess == '1' && data.responsible_province == '广州'){
+              union_row3[i]['去年故障量'] = union_row3[i]['去年故障量'] + 1;
+            }else{
+              union_row2[i]['去年故障量'] = union_row2[i]['去年故障量'] + 1;
             }
+            break;
+          }
         }
       }
 
@@ -312,33 +372,47 @@ export default {
         let time = new Date(data.end_time);
         for(let i=0;i<dayNow;i++){
           if(time > dateArr[i] && time < dateArr[i+1]){
-            union_row1[i]['本地工单'] = union_row1[i]['本地工单'] + 1;
             if(data.is_trouble == '1'){
-              union_row2[i]['本地工单'] = union_row2[i]['本地工单'] + 1;
+              union_row1[i]['本地责任故障'] = union_row1[i]['本地责任故障'] + 1;
+            }else{
+              union_row1[i]['本地非责任故障'] = union_row1[i]['本地非责任故障'] + 1;
             }
+            union_row1[i]['合计'] = union_row1[i]['合计'] + 1;
             break;
           }
         }
-        if(time > dateArr[dayNow]){
-          union_row1[dayNow]['本地工单'] = union_row1[dayNow]['本地工单'] + 1;
-          if(data.is_trouble == '1'){
-            union_row2[dayNow]['本地工单'] = union_row2[dayNow]['本地工单'] + 1;
-          }
-        }
       }
-
-      this.sumDataArray.rows[2] = union_row1;
-      this.sumDataArray.rows[3] = union_row2;
-      this.sumDataArray.loading = false;
+      for(let i in union_row1){
+        this.sumDataArray.markPointData[3].push({
+          value:union_row1[i]['合计'],
+          coord:[Number(i),Number(union_row1[i]['合计'])],
+          label:{
+            show:true,
+            position:'top',
+            color:'#AAAAAA'
+          }
+        })
+      }
+      for(let i in union_row2){
+        union_row2[i]['同比'] = ((union_row2[i]['故障量']-union_row2[i]['去年故障量'])/union_row2[i]['去年故障量']).toFixed(4);
+      }
+      for(let i in union_row3){
+        union_row3[i]['同比'] = ((union_row3[i]['故障量']-union_row3[i]['去年故障量'])/union_row3[i]['去年故障量']).toFixed(4);
+      }
+      this.sumDataArray.rows[0] = union_row2;
+      this.sumDataArray.rows[1] = union_row3;
+      this.sumDataArray.rows[3] = union_row1;
+      this.loading = false;
       let data = {
         columns:this.sumDataArray.columns[0],
         rows:this.sumDataArray.rows[0]
       }
-      this.SumData = data;
-      this.sumExtend.title = {
+      this.showData = data;
+      this.extend.title = {
         show:true,
         text:this.sumDataArray.title[0]
       }
+      this.settings.area = this.sumDataArray.area[0];
       this.timer = setTimeout(this.change,5000);
     },
     change:function(){
@@ -348,7 +422,7 @@ export default {
       if(this.playing){
         this.timer = setTimeout(this.change,5000);
       }
-      if(this.sumDataArray.loading){
+      if(this.loading){
         return;
       }
       if(this.sumDataArray.flag+1 >= this.sumDataArray.length){
@@ -361,25 +435,55 @@ export default {
         columns:this.sumDataArray.columns[i],
         rows:this.sumDataArray.rows[i]
       }
-      this.SumData = data;
-      this.sumExtend.title = {
+      this.showData = data;
+      this.extend.title = {
         show:true,
         text:this.sumDataArray.title[i]
       }
+      this.extend.series.markPoint.data = this.sumDataArray.markPointData[i];
+      console.log(this.extend.series.markPoint);
+      this.settings.area = this.sumDataArray.area[i];
     },
     play:function(){
       if(this.timer != undefined){
         clearTimeout(this.timer)
         this.timer = undefined;
         this.playing = false;
-        this.sumExtend.toolbox.feature.myPlay.show = true;
-        this.sumExtend.toolbox.feature.myPause.show = false;
+        this.extend.toolbox.feature.myPlay.show = true;
+        this.extend.toolbox.feature.myPause.show = false;
       }else{
         this.playing = true;
         this.change();
-        this.sumExtend.toolbox.feature.myPlay.show = false;
-        this.sumExtend.toolbox.feature.myPause.show = true;
+        this.extend.toolbox.feature.myPlay.show = false;
+        this.extend.toolbox.feature.myPause.show = true;
       }
+    },
+    assess_query:async function(list){
+      let self = this;
+      for(let i in list){
+        await this.canDoQuery(list[i]).then(function(res){
+          self.canDo[list[i]] = res;
+        })
+      }
+    },
+    canDoQuery:async function(op){
+      let data = new FormData();
+      data.append('token', this.token);
+      data.append('operation',op);
+      let canDo = false;
+      await this.axios
+        .post('http://' + this.$global_msg.HOST + 'scripts/system/canDoQuery.php', data)
+        .then(function(res) {
+          if(res.data.status == 'success'){
+            canDo = true;
+          }else{
+            console.log("can NOT do "+op+":"+res.data.errMsg);
+          }
+        })
+        .catch(function(e){
+          console.log("query error:"+e)
+        })
+      return canDo;
     }
   }
 }

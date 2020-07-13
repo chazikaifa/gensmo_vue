@@ -1,5 +1,5 @@
 <template>
-  <el-container style="width:100%;" v-loading="pageLoading">
+  <el-container style="width:100%;" v-loading="pageLoading" element-loading-background="#222933">
     <el-header>
       <div class="title">政企网络服务中台本地故障单管理系统</div>
     </el-header>
@@ -162,7 +162,7 @@
             <div class="label">公司所在区域</div>
           </el-col>
           <el-col :span="11">
-            <div class="label">是否故障</div>
+            <div class="label">行业类型</div>
           </el-col>
           <el-col :span="1"></el-col>
         </el-row>
@@ -176,77 +176,6 @@
                   :key="item.value"
                   :label="item.label"
                   :value="item.value">
-                </el-option>
-              </el-select>
-            </div>
-          </el-col>
-          <el-col :span="11">
-            <div class="content">
-              <el-select v-model="order.is_trouble" :clearable="true" placeholder="请选择" :disabled="!edit">
-                <el-option key="1" label="是" value="1"></el-option>
-                <el-option key="0" label="否" value="0"></el-option>
-              </el-select>
-            </div>
-          </el-col>
-          <el-col :span="1"></el-col>
-        </el-row>
-
-        <el-row>
-          <el-col :span="1"></el-col>
-          <el-col :span="11">
-            <div class="label">是否对端</div>
-          </el-col>
-          <el-col :span="11">
-            <div class="label">故障分类</div>
-          </el-col>
-          <el-col :span="1"></el-col>
-        </el-row>
-        <el-row>
-          <el-col :span="1"></el-col>
-          <el-col :span="11">
-            <div class="content">
-              <el-select v-model="order.is_remote" :clearable="true" placeholder="请选择" :disabled="!edit">
-                <el-option key="1" label="是" value="1"></el-option>
-                <el-option key="0" label="否" value="0"></el-option>
-              </el-select>
-            </div>
-          </el-col>
-          <el-col :span="11">
-            <div class="content">
-              <el-select v-model="order.trouble_class" :clearable="true" @change="troubleClassChange" placeholder="请选择" :disabled="!edit">
-                <el-option
-                  v-for="item in trouble_class"
-                  :key="item.value"
-                  :label="item.label"
-                  :value="item.value">
-                </el-option>
-              </el-select>
-            </div>
-          </el-col>
-          <el-col :span="1"></el-col>
-        </el-row>
-
-        <el-row>
-          <el-col :span="1"></el-col>
-          <el-col :span="11">
-            <div class="label">原因细化</div>
-          </el-col>
-          <el-col :span="11">
-            <div class="label">行业类型</div>
-          </el-col>
-          <el-col :span="1"></el-col>
-        </el-row>
-        <el-row>
-          <el-col :span="1"></el-col>
-          <el-col :span="11">
-            <div class="content">
-              <el-select v-model="order.trouble_reason" :clearable="true" placeholder="请选择" :disabled="!edit">
-                <el-option
-                  v-for="item in trouble_reason[order.trouble_class]"
-                  :key="item.value"
-                  :label="item.label"
-                  :value="item.value"
-                  >
                 </el-option>
               </el-select>
             </div>
@@ -296,6 +225,140 @@
           <el-col :span="1"></el-col>
         </el-row>
 
+        <el-row>
+          <el-col :span="1"></el-col>
+          <el-col :span="11">
+            <div class="label">是否故障</div>
+          </el-col>
+          <el-col :span="11">
+            <div class="label">是否对端</div>
+          </el-col>
+          <el-col :span="1"></el-col>
+        </el-row>
+        <el-row>
+          <el-col :span="1"></el-col>
+          <el-col :span="11">
+            <div class="content">
+              <el-select v-model="order.is_trouble" :clearable="true" placeholder="请选择" :disabled="!edit">
+                <el-option key="1" label="是" value="1"></el-option>
+                <el-option key="0" label="否" value="0"></el-option>
+              </el-select>
+            </div>
+          </el-col>
+          <el-col :span="11">
+            <div class="content">
+              <el-select v-model="order.is_remote" :clearable="true" placeholder="请选择" :disabled="!edit">
+                <el-option key="1" label="是" value="1"></el-option>
+                <el-option key="0" label="否" value="0"></el-option>
+              </el-select>
+            </div>
+          </el-col>
+          <el-col :span="1"></el-col>
+        </el-row>
+
+        <transition name="el-fade-in">
+          <el-row v-if="order.is_trouble == '1'">
+            <el-col :span="1"></el-col>
+            <el-col :span="11">
+              <div class="label">故障分类</div>
+            </el-col>
+            <el-col :span="11">
+              <div class="label">原因细化</div>
+            </el-col>
+            <el-col :span="1"></el-col>
+          </el-row>
+        </transition>
+        <transition name="el-fade-in">
+        <el-row v-if="order.is_trouble == '1'">
+          <el-col :span="1"></el-col>
+          <el-col :span="11">
+            <div class="content">
+              <el-select v-model="order.trouble_class" :clearable="true" @change="troubleClassChange" placeholder="请选择" :disabled="!edit">
+                <el-option
+                  v-for="item in trouble_class"
+                  :key="item.value"
+                  :label="item.label"
+                  :value="item.value">
+                </el-option>
+              </el-select>
+            </div>
+          </el-col>
+          <el-col :span="11">
+            <div class="content">
+              <el-select v-model="order.trouble_reason" :clearable="true" placeholder="请选择" :disabled="!edit||order.trouble_class == ''">
+                <el-option
+                  v-for="item in trouble_reason[order.trouble_class]"
+                  :key="item.value"
+                  :label="item.label"
+                  :value="item.value"
+                  >
+                </el-option>
+              </el-select>
+            </div>
+          </el-col>
+          <el-col :span="1"></el-col>
+        </el-row>
+        </transition>
+
+        <transition name="el-fade-in">
+          <el-row v-if="order.is_trouble == '1'">
+            <el-col :span="1"></el-col>
+            <el-col :span="11">
+              <div class="label">机房名称</div>
+            </el-col>
+            <el-col :span="11">
+              <div class="label">机房类型</div>
+            </el-col>
+            <el-col :span="1"></el-col>
+          </el-row>
+        </transition>
+        <transition name="el-fade-in">
+          <el-row v-if="order.is_trouble == '1'">
+            <el-col :span="1"></el-col>
+            <el-col :span="11">
+              <div class="content"><el-input v-model="order.roomName" :disabled="!edit"></el-input></div>
+            </el-col>
+            <el-col :span="11">
+              <div class="content">
+                <el-select v-model="order.roomType" :clearable="true" placeholder="请选择" :disabled="!edit">
+                  <el-option
+                    v-for="item in roomType"
+                    :key="item.value"
+                    :label="item.label"
+                    :value="item.value">
+                  </el-option>
+                </el-select>
+              </div>
+            </el-col>
+            <el-col :span="1"></el-col>
+          </el-row>
+        </transition>
+
+        <transition name="el-fade-in">
+          <el-row v-if="order.is_trouble == '1'">
+            <el-col :span="1"></el-col>
+            <el-col :span="11">
+              <div class="label">故障原因简述</div>
+            </el-col>
+            <el-col :span="11">
+              <div class="label">存在隐患</div>
+            </el-col>
+            <el-col :span="1"></el-col>
+          </el-row>
+        </transition>
+        <transition name="el-fade-in">
+          <el-row v-if="order.is_trouble == '1'">
+            <el-col :span="1"></el-col>
+            <el-col :span="11">
+              <div class="content"><el-input v-model="order.reasonDescription" :disabled="!edit" :placeholder="description_holder[order.trouble_class]"></el-input></div>
+            </el-col>
+            <el-col :span="11">
+              <div class="content"><el-input v-model="order.hiddenDanger" :disabled="!edit"></el-input></div>
+            </el-col>
+            <el-col :span="1"></el-col>
+          </el-row>
+        </transition>
+
         <el-row v-if="!newOrder">
           <el-col :span="1"></el-col>
           <el-col :span="22"><div class="label">故障进展</div></el-col>
@@ -310,6 +373,7 @@
               style="width:100%"
               size="small"
               :show-header="false"
+              @row-dblclick="parseProcess"
               stripe>
               <el-table-column type="index" align="center" width="50"></el-table-column>
               <el-table-column align="center" width="95">
@@ -383,7 +447,7 @@
         <el-row>
           <el-col :span="1"></el-col>
           <el-col :span="22">
-            <el-button style="width:100%" type="primary" @click="submit" :loading="isLoading">{{edit?'确认':'编辑'}}</el-button>
+            <el-button v-if="canDo.order_edit" style="width:100%" type="primary" @click="submit" :loading="isLoading">{{edit?'确认':'编辑'}}</el-button>
           </el-col>
           <el-col :span="1"></el-col>
         </el-row>
@@ -487,6 +551,14 @@ export default {
         {label:'建筑业',value:'建筑业'},
         {label:'其他行业',value:'其他行业'}
       ],
+      roomType:[
+        {label:'接入间',value:'接入间'},
+        {label:'汇聚机房',value:'汇聚机房'},
+        {label:'核心机房',value:'核心机房'},
+        {label:'客户机房',value:'客户机房'},
+        {label:'基站',value:'基站'},
+        {label:'室分机房',value:'室分机房'},
+      ],
       area:[
         {label:'天河',value:'天河'},
         {label:'越秀',value:'越秀'},
@@ -511,6 +583,12 @@ export default {
         {label:'政企云',value:'政企云'},
         {label:'其他',value:'其他'}
       ],
+      description_holder:{
+        '光缆故障':'请填写断点位置',
+        '动力配套':'请简述故障原因（例：物业拉闸，市电停电）',
+        '电缆故障':'请填写断点位置',
+        '设备故障':'请简述故障原因（例：端口吊死，光模块故障）'
+      },
       id:'',
       order:{},
       processList:[],
@@ -522,16 +600,18 @@ export default {
     this.token = this.$cookies.get('user_token');
     this.user_name = this.$cookies.get('user_name');
     this.id = this.$route.query.id;
+    let self = this;
     if(this.id != undefined){
-      let self = this;
       this.assess_query(this.doList).then(function(){
         self.edit = (self.$route.query.edit == 'true') && self.canDo.order_edit
         self.getData();
       })
     }else{
-      this.edit = true;
-      this.newOrder = true;
-      this.pageLoading = false;
+      this.assess_query(this.doList).then(function(){
+        self.edit = true;
+        self.newOrder = true;
+        self.pageLoading = false;
+      });
     }
   },
   methods: {
@@ -568,6 +648,7 @@ export default {
         .then(function(res){
           if(res.data.status == 'success'){
             self.processList = res.data.result
+            self.refreshProcessList();
           }else{
             self.$message.error("[getProcessList]error:"+res.data.errMsg);
           }
@@ -580,6 +661,9 @@ export default {
     refreshProcessList:function(){
       for(let i in this.processList){
         this.processList[i].list_order = i
+      }
+      if(this.processList > 0){
+        this.order.process = this.processList[this.processList.length - 1]
       }
     },
     deleteProcess:function(index){
@@ -611,6 +695,7 @@ export default {
           })
           .then(function() {
             let index = Number(obj.list_order);
+            console.log(res);
             if (res.time.length > res.description.length) {
               self.$message.error('字符串分割错误！')
             } else {
@@ -625,18 +710,16 @@ export default {
                 }
               }
               for (let i = 0; i < res.description.length; i++) {
-                if (res.description[i] != "") {
-                  let fd = new Date(res.time[i]).Format("yyyy-MM-dd hh:mm:ss");
-                  let newProcess = {
-                    process_id: "newProcess",
-                    order_id: self.id,
-                    description: res.description[i].trim(),
-                    time: fd,
-                    mark: "",
-                    list_order: index + ""
-                  }
-                  self.processList.splice(index, 0, newProcess);
+                let fd = new Date(res.time[i]).Format("yyyy-MM-dd hh:mm:ss");
+                let newProcess = {
+                  process_id: "newProcess",
+                  order_id: self.id,
+                  description: res.description[i].trim(),
+                  time: fd,
+                  mark: "",
+                  list_order: index + ""
                 }
+                self.processList.splice(index, 0, newProcess);
                 index++;
               }
               self.refreshProcessList();
@@ -681,23 +764,40 @@ export default {
       }
       data.append('DATA',JSON.stringify(json));
       self.deleteProcessList(function(){
-        self.axios
-        .post('http://' + self.$global_msg.HOST + 'scripts/order/add_process_list.php', data)
-        .then(function(res){
-          if(res.data.status == 'success'){
-            callback()
-          }else{
-            self.$message.error("[updateProcessList]error:"+res.data.errMsg);
-          }
-        })
-        .catch(function(e){
-          console.log("[updateProcessList]"+e);
-          self.$message.error("[updateProcessList]Network Error:"+e);
-        })
+        if(self.processList.length > 0){
+          self.axios
+          .post('http://' + self.$global_msg.HOST + 'scripts/order/add_process_list.php', data)
+          .then(function(res){
+            if(res.data.status == 'success'){
+              callback()
+            }else{
+              self.$message.error("[updateProcessList]error:"+res.data.errMsg);
+            }
+          })
+          .catch(function(e){
+            console.log("[updateProcessList]"+e);
+            self.$message.error("[updateProcessList]Network Error:"+e);
+          })
+        }else{
+          callback()
+        }
       })
     },
+    parseProcess:function(row,column,event){
+      if(!this.edit){
+        let text = row.time + ' ' + row.description
+        this.$copyText(text).then(res => {
+            alert('已复制到剪切板！');
+          },
+          err => {
+            alert('复制失败，请手动复制！');
+            console.log(err);
+          }
+        );
+      }
+    },
     getOrderData:function(){
-      let paramList = ['id','name','start_time','end_time','step','trouble_symptom','link_id','process','circuit_number','contact_number','contact_name','area','is_trouble','is_remote','trouble_class','trouble_reason','business_type','remark','major'];
+      let paramList = ['id','name','start_time','end_time','step','trouble_symptom','link_id','process','circuit_number','contact_number','contact_name','area','is_trouble','is_remote','trouble_class','trouble_reason','business_type','remark','major','roomName','roomType','reasonDescription','hiddenDanger'];
       let data = new FormData();
       for(let i in paramList){
         data.append(paramList[i],this.order[paramList[i]]==undefined?'':this.order[paramList[i]])
@@ -744,96 +844,188 @@ export default {
     },
     timeCheck:function(){
       if(!this.order.start_time){
-        return {result:false,msg:'请输入故障发生时间'}
+        return {result:'fail',msg:'请输入故障发生时间'}
       }
       if(!this.order.name){
-        return {result:false,msg:'请输入客户名称'}
+        return {result:'fail',msg:'请输入客户名称'}
       }
       if(this.order.step == '结单'){
         if (!this.order.end_time) {
-          return {result:false,msg:'请输入结单时间'}
+          return {result:'fail',msg:'请输入结单时间'}
         }
         if(new Date(this.order.end_time) - new Date(this.order.start_time) < 0){
-          return {result:false,msg:'结单时间小于故障发生时间'}
+          return {result:'fail',msg:'结单时间小于故障发生时间'}
         }
       }
+      let suspend = false;
       if(this.processList.length > 0){
-        let suspend = false;
         let last_time = new Date(this.order.start_time);
         for(let i in this.processList){
           let p = this.processList[i]
           if(!p.time){
-            return {result:false,msg:'请输入进展时间'}
+            return {result:'fail',msg:'请输入进展时间'}
           }
           if(p.mark == 'set_suspend'){
             if(suspend){
-              return {result:false,msg:'请先解挂后再挂起'}
+              return {result:'fail',msg:'请先解挂后再挂起'}
             }
             suspend = true;
           }
           if(p.mark == 'unset_suspend'){
             if(!suspend){
-              return {result:false,msg:'错误的解挂标志'}
+              return {result:'fail',msg:'错误的解挂标志'}
             }
             suspend = false;
           }
           let time = new Date(p.time);
           if(time - last_time < 0){
-            return {result:false,msg:'进展时间存在交错'}
+            return {result:'fail',msg:'进展时间存在交错'}
           }
           last_time = time;
         }
         if(this.order.step == '结单' && new Date(this.order.end_time) - last_time < 0){
-          return {result:false,msg:'结单时间小于最后进展时间'}
+          return {result:'fail',msg:'结单时间小于最后进展时间'}
         }
       }
-      return {result:true};
-    },
-    submit:function(){
-      let self = this;
-      if(this.newOrder){
-        let check = this.timeCheck();
-        if(!check.result){
-          this.$message.error(check.msg);
-          return;
+      if(this.order.step != '挂起中' && suspend){
+        return {result:'warning',suspend:suspend,msg:'工单挂起中，是否自动将工单步骤改为‘挂起中’?'}
+      }
+      if(this.order.step == '挂起中' && !suspend){
+        return {result:'warning',suspend:suspend,msg:'工单未挂起或已解挂，是否自动将工单步骤改为‘未结单’?'}
+      }
+      if(this.order.step == '结单' && this.order.is_trouble == '1'){
+        if(this.order.trouble_class == ''){
+          return {result:'fail',msg:'请选择故障分类！'}
         }
-        this.isLoading = true;
-        this.orderNew(function(id){
-          self.$router.replace({
-            name: 'orderEdit',
-            query: {
-              id:id,
-              edit:false
+        if(this.order.trouble_reason == ''){
+          return {result:'fail',msg:'请选择原因细化！'}
+        }
+        let res = null;
+        switch(this.order.trouble_class){
+          case '光缆故障':
+          case '电缆故障':
+            if(!this.order.reasonDescription){
+              res = {result:'fail',msg:'请填写断点位置！'}
             }
-          })
-          self.isLoading = false;
-        });
-      }else{
-        if(this.edit){
-          let check = this.timeCheck();
-          if(!check.result){
-            this.$message.error(check.msg);
-            return;
-          }
-          this.isLoading = true;
-          this.updateProcessList(function(){
-            self.orderUpdate(function(){
+            break;
+          case '设备故障':
+            if(!this.order.roomName){
+              res =  {result:'fail',msg:'请填写机房名称！'}
+            }
+            if(!this.order.roomType){
+              res =  {result:'fail',msg:'请选择机房类型！'}
+            }
+            if(!this.order.reasonDescription){
+              res =  {result:'fail',msg:'请简述故障原因（例：端口吊死，光模块故障）'}
+            }
+            break;
+          case '动力配套':
+            if(!this.order.roomName){
+              res =  {result:'fail',msg:'请填写机房名称！'}
+            }
+            if(!this.order.roomType){
+              res =  {result:'fail',msg:'请选择机房类型！'}
+            }
+            if(!this.order.reasonDescription){
+              res =  {result:'fail',msg:'请简述故障原因（例：物业拉闸，市电停电））'}
+            }
+            break;
+        }
+        if(res){
+          return res;
+        }
+      }
+      return {result:'success'};
+    },
+    submit: function() {
+      let self = this;
+      if (this.newOrder) {
+        let check = this.timeCheck();
+        switch (check.result) {
+          case 'success':
+            this.isLoading = true;
+            this.orderNew(function(id) {
               self.$router.replace({
                 name: 'orderEdit',
                 query: {
-                  id:self.id,
-                  edit:'false'
+                  id: id,
+                  edit: false
                 }
               })
               self.isLoading = false;
-            })
-          });
-        }else{
+            });
+            break;
+          case 'warning':
+            this.$confirm(check.msg, '提示', {
+              type: 'info'
+            }).then(function() {
+              self.order.step = check.suspend ? '挂起中' : '未结单';
+              self.isLoading = true;
+              self.orderNew(function(id) {
+                self.$router.replace({
+                  name: 'orderEdit',
+                  query: {
+                    id: id,
+                    edit: false
+                  }
+                })
+                self.isLoading = false;
+              });
+            }).catch(function() {})
+            break;
+          case 'fail':
+            this.$message.error(check.msg);
+            break;
+        }
+      } else {
+        if (this.edit) {
+          let check = this.timeCheck();
+          switch (check.result) {
+            case 'success':
+              this.isLoading = true;
+              this.updateProcessList(function() {
+                self.orderUpdate(function() {
+                  self.$router.replace({
+                    name: 'orderEdit',
+                    query: {
+                      id: self.id,
+                      edit: 'false'
+                    }
+                  })
+                  self.isLoading = false;
+                })
+              });
+              break;
+            case 'warning':
+              this.$confirm(check.msg, '提示', {
+                type: 'info'
+              }).then(function() {
+                self.order.step = check.suspend ? '挂起中' : '未结单';
+                self.isLoading = true;
+                self.updateProcessList(function() {
+                  self.orderUpdate(function() {
+                    self.$router.replace({
+                      name: 'orderEdit',
+                      query: {
+                        id: self.id,
+                        edit: 'false'
+                      }
+                    })
+                    self.isLoading = false;
+                  })
+                });
+              }).catch(function() {})
+              break;
+            case 'fail':
+              this.$message.error(check.msg);
+              break;
+          }
+        } else {
           self.$router.replace({
             name: 'orderEdit',
             query: {
-              id:self.id,
-              edit:'true'
+              id: self.id,
+              edit: 'true'
             }
           })
         }
@@ -923,17 +1115,20 @@ export default {
 }
 .container{
   margin-bottom: 32px;
-  background: white;
+  background: #2c3e50;
   border-radius: 24px;
   max-width: 840px;
   min-width: 620px;
   width:80%;
   height: fit-content;
-  box-shadow: #AAAAAA 1px 1px 10px;
+  box-shadow: #555555 1px 1px 10px inset;
 }
 .el-col{
   min-height: 36px;
   position: relative;
+}
+.el-row{
+  transition: all .5s
 }
 .label{
   height:12px;

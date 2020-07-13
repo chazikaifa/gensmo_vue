@@ -9,11 +9,22 @@ import VXEUtils from 'vxe-utils'
 import VXETable from 'vxe-table'
 import ElementUI from 'element-ui'
 import VueCookies from 'vue-cookies'
-import 'element-ui/lib/theme-chalk/index.css'
 import 'vxe-table/lib/index.css'
+import VueClipboard from 'vue-clipboard2'
+
+// import 'element-ui/lib/theme-chalk/index.css'
+// import './assets/themes/009CE6/index.css'
+// import './assets/themes/dark-009CE6/index.css'
+import 'element-theme-dark';
 
 import global_msg from './global.js'
 Vue.prototype.$global_msg = global_msg
+
+let theme = localStorage.getItem('theme')
+if(!theme || ['009CE6','dark-009CE6'].indexOf(theme) < 0){
+  localStorage.setItem('theme','dark-009CE6');
+}
+
 
 Vue.config.productionTip = false
 Vue.use(VueAxios,axios)
@@ -22,6 +33,7 @@ Vue.use(VXETable)
 Vue.use(VXEUtils, XEUtils)
 Vue.use(ElementUI)
 Vue.use(VueCookies)
+Vue.use(VueClipboard)
 
 Vue.prototype.$setgoindex = function () {
   if (window.history.length <= 1) {

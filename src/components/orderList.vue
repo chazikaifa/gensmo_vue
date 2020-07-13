@@ -1,5 +1,5 @@
 <template>
-  <el-container style="width:100%;height: 100%" v-loading="pageLoading">
+  <el-container style="width:100%;height: 100%" v-loading="pageLoading" element-loading-background="#222933">
     <el-main style="height: 100%">
       <el-button icon="el-icon-search" @click="show_search = true" type="primary" circle></el-button>
       <el-button :icon="isLoading?'el-icon-loading':'el-icon-refresh'" :disabled="isLoading" @click="refresh" type="primary" circle></el-button>
@@ -107,7 +107,8 @@
         </el-table-column>
         <el-table-column
           prop="id"
-          label="故障单编号">
+          label="故障单编号"
+          width="130px">
         </el-table-column>
         <el-table-column
           prop="name"
@@ -123,20 +124,22 @@
         </el-table-column>
         <el-table-column
           prop="start_time"
-          label="故障发生时间">
+          label="故障发生时间"
+          width="170px">
         </el-table-column>
         <el-table-column
           prop="step"
-          label="工单状态">
+          label="工单状态"
+          width="100px">
         </el-table-column>
         <el-table-column
           label="操作"
-          width="130px"
+          width="170px"
           :resizable="false">
           <template slot-scope="scope">
-            <el-button size="mini" v-if="canDo.order_view" icon="el-icon-view" @click="order_view(scope.$index)" circle></el-button>
-            <el-button size="mini" v-if="canDo.order_edit" icon="el-icon-edit" @click="order_edit(scope.$index)" circle></el-button>
-            <el-button size="mini" v-if="step.toString()==['已撤销'].toString()?canDo.order_delete:canDo.order_update" @click="order_delete(scope.$index)" :icon="step.toString()==['已撤销'].toString()?'el-icon-delete':'el-icon-close'" circle></el-button>
+            <el-button size="small" v-if="canDo.order_view" icon="el-icon-view" @click="order_view(scope.$index)" circle></el-button>
+            <el-button size="small" v-if="canDo.order_edit" icon="el-icon-edit" @click="order_edit(scope.$index)" circle></el-button>
+            <el-button size="small" v-if="step.toString()==['已撤销'].toString()?canDo.order_delete:canDo.order_update" @click="order_delete(scope.$index)" :icon="step.toString()==['已撤销'].toString()?'el-icon-delete':'el-icon-close'" circle></el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -196,7 +199,8 @@ export default {
       isLoading:false,
       pageLoading:true,
       canDo:{},
-      doList:['order_view','order_edit','order_delete','order_update']
+      doList:['order_view','order_edit','order_delete','order_update'],
+      timer:undefined
     }
   },
   created: function() {
@@ -216,8 +220,11 @@ export default {
     getData: function() {
       let self = this;
       this.isLoading = true;
+      clearTimeout(this.timer);
+      this.timer = undefined;
       this.getList(function(){
         self.isLoading = false;
+        self.timer = setTimeout(self.getData,60000)
       })
     },
     getList:function(cb = null){

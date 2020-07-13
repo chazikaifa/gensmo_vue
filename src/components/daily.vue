@@ -37,8 +37,8 @@
 </template>
 
 <script>
-var TOP33_sum = 22;
-var TOP33_time_sum = 2294;
+var TOP33_sum = 47;
+var TOP33_time_sum = 5559.13;
 Date.prototype.Format = function(fmt) { //author: meizz   
   var o = {
     "M+": this.getMonth() + 1, //月份   
@@ -65,6 +65,9 @@ export default {
   },
   data() {
     return {
+      token:'',
+      canDo:{},
+      doList:['getAssessOrder'],
       days: [],
       dailyData: [{
         item: '责任故障重复次数',
@@ -80,52 +83,52 @@ export default {
         targetType: '<'
       }, {
         item: '集团直属客户故障及时率',
-        target: 0.9,
+        target: 0.98,
         duty: '传输',
         targetType: '>'
       }, {
         item: '集团直属客户故障及时率',
-        target: 0.9,
+        target: 0.98,
         duty: '数据',
         targetType: '>'
       }, {
         item: '集团直属客户故障及时率',
-        target: 0.9,
+        target: 0.98,
         duty: '交换',
         targetType: '>'
       }, {
         item: '集团直属客户故障及时率',
-        target: 0.9,
+        target: 0.98,
         duty: '政企云',
         targetType: '>'
       }, {
         item: '集团直属客户故障及时率',
-        target: 0.9,
+        target: 0.98,
         duty: '其他',
         targetType: '>'
       }, {
         item: 'TOP800家1-2级故障及时率',
-        target: 0.9,
+        target: 0.95,
         duty: '传输',
         targetType: '>'
       }, {
         item: 'TOP800家1-2级故障及时率',
-        target: 0.9,
+        target: 0.95,
         duty: '数据',
         targetType: '>'
       }, {
         item: 'TOP800家1-2级故障及时率',
-        target: 0.9,
+        target: 0.95,
         duty: '交换',
         targetType: '>'
       }, {
         item: 'TOP800家1-2级故障及时率',
-        target: 0.9,
+        target: 0.95,
         duty: '政企云',
         targetType: '>'
       }, {
         item: 'TOP800家1-2级故障及时率',
-        target: 0.9,
+        target: 0.95,
         duty: '其他',
         targetType: '>'
       }, {
@@ -269,28 +272,28 @@ export default {
     }
   },
   created: function() {
-    this.init();
+    let self = this;
+    this.token = this.$cookies.get('user_token');
+    this.countDay();
+    this.assess_query(this.doList).then(function(){
+      if(self.canDo.getAssessOrder){
+        self.init();
+      }else{
+        self.$message.error('[sumLine]:没有接口权限！')
+      }
+    })
   },
   updated: function() {},
   methods: {
-    init: function() {
-      this.dailyData['TOP33_sum'] = {
-        item: 'TOP33全年累计',
-        target: 139,
-        targetType: '<'
-      };
-      this.dailyData['TOP33_time'] = {
-        item: 'TOP33全年平均历时',
-        target: 112,
-        targetType: '<'
-      };
-
+    //必须在渲染完成之前填充days数组，否则动态生成的列不能正常显示
+    countDay:function(){
       let now = new Date();
       this.now = now.Format("yyyy年MM月dd日");
       now.setDate(now.getDate() - 1);
       now.setHours(23);
       now.setMinutes(59);
       now.setSeconds(59);
+
       // let maxDay = new Date(now.getFullYear(),now.getMonth()+1,0).getDate();
       let maxDay = now.getDate();
       let minDay;
@@ -318,6 +321,24 @@ export default {
           data: []
         });
       }
+    },
+    init: function() {
+      this.dailyData['TOP33_sum'] = {
+        item: 'TOP33全年累计',
+        target: 139,
+        targetType: '<'
+      };
+      this.dailyData['TOP33_time'] = {
+        item: 'TOP33全年平均历时',
+        target: 112,
+        targetType: '<'
+      };
+
+      let now = new Date();
+      now.setDate(now.getDate() - 1);
+      now.setHours(23);
+      now.setMinutes(59);
+      now.setSeconds(59);
 
       let start = new Date(now);
       start.setDate(1);
@@ -325,11 +346,6 @@ export default {
       start.setMinutes(0);
       start.setSeconds(0);
       this.getData(start.Format('yyyy-MM-dd hh:mm:ss'), now.Format('yyyy-MM-dd hh:mm:ss'));
-    },
-    refresh: function() {
-      //动态生成的列需要手动刷新
-      let xTable = this.$refs.xTable;
-      xTable.updateData();
     },
     colspanMethod: function({
       // row,
@@ -413,8 +429,10 @@ export default {
       let data = new FormData();
       data.append('START', start);
       data.append('END', end);
+      data.append('token',this.token)
+      data.append('province','广东省广州市')
       this.axios
-        .post('http://' + self.$global_msg.HOST + 'scripts/assess_order/get_order_by_datetime.php', data)
+        .post('http://' + self.$global_msg.HOST + 'scripts/assess_order/get_gz_order_by_datetime.php', data)
         .then(function(res) {
           if (res.data.status == 'success') {
             self.rawData = res.data.result;
@@ -431,8 +449,6 @@ export default {
                 }
               }
             }
-
-            console.log(self.assessData);
 
             self.judge(self.judgeRepeat, "sum", 0, function(data) {
               self.dailyData[0]['toTarget'] = data.sum - self.dailyData[0]['target'];
@@ -571,14 +587,13 @@ export default {
 
             self.countCompare();
             self.setDesc();
-            self.refresh();
             self.dataReady = true;
           } else {
-            alert(res.data.errMsg);
+            self.$message.error(res.data.errMsg);
           }
         })
         .catch(function(err) {
-          alert(err);
+          self.$message.error(err);
         });
     },
     judgeRepeat: function(data) {
@@ -605,7 +620,7 @@ export default {
         } else {
           circuit_arr[data[i].circuit_number].sum++;
           if (circuit_arr[data[i].circuit_number].sum > 1) {
-            console.log(data[i].circuit_number + 'repeat:' + circuit_arr[data[i].circuit_number].sum);
+            //console.log(data[i].circuit_number + 'repeat:' + circuit_arr[data[i].circuit_number].sum);
           }
         }
       }
@@ -967,7 +982,6 @@ export default {
       if (e.$rowIndex == 0) {
         let text = "【" + this.now + "政企网络服务中台考核指标通报】\r\n" + this.dailyDesc;
         this.$copyText(text).then(res => {
-            console.log(res)
             alert('已复制到剪切板！');
           },
           err => {
@@ -1107,6 +1121,33 @@ export default {
       } else {
         this.$router.back(-1);
       }
+    },
+    assess_query:async function(list){
+      let self = this;
+      for(let i in list){
+        await this.canDoQuery(list[i]).then(function(res){
+          self.canDo[list[i]] = res;
+        })
+      }
+    },
+    canDoQuery:async function(op){
+      let data = new FormData();
+      data.append('token', this.token);
+      data.append('operation',op);
+      let canDo = false;
+      await this.axios
+        .post('http://' + this.$global_msg.HOST + 'scripts/system/canDoQuery.php', data)
+        .then(function(res) {
+          if(res.data.status == 'success'){
+            canDo = true;
+          }else{
+            console.log("can NOT do "+op+":"+res.data.errMsg);
+          }
+        })
+        .catch(function(e){
+          console.log("query error:"+e)
+        })
+      return canDo;
     }
   }
 }
@@ -1119,6 +1160,9 @@ export default {
   align-items: center;
   flex-direction: column;
   position: relative;
+  background: #FFFFFF;
+  height: fit-content;
+  padding-bottom: 20px;
 }
 #btn_back{
   position: absolute;
@@ -1130,7 +1174,8 @@ export default {
   font-size: 18px;
   width: 1380px;
   text-align: center;
-  margin-top: 20px;
+  margin: 10px 0 2px 0;
+  color:#000000;
 }
 .daily_container .table{
   width:1380px;

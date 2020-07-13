@@ -12,6 +12,10 @@ export default {
   name: 'App',
   components: {
   },
+  mounted:function(){
+    // let theme = localStorage.getItem('theme');
+    // document.body.className = 'custom-'+theme;
+  },
   computed:{
     key(){
       return this.$route.name !== undefined ? this.$route.query + new Date() : this.$route + new Date();
@@ -28,5 +32,6 @@ export default {
   width: 100vw;
   overflow-x: hidden;
   overflow-y: scroll;
+  /*background: #222933;*/
 }
 </style>

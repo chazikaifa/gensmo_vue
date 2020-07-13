@@ -468,6 +468,22 @@ export default {
     },
     getOption:function(type,series,xAxis=[],legend=[]){
       let option;
+      let grid = {}
+      if(legend.length == 0){
+        grid = {
+          x:10,
+          y:25,
+          x2:10,
+          y2:25
+        }
+      }else{
+        grid = {
+          x:10,
+          y:25,
+          x2:10,
+          y2:45
+        }
+      }
       switch(type){
         case 'pie':
           series.label = {
@@ -480,12 +496,7 @@ export default {
             title: {
               show: false
             },
-            grid:{
-              x:10,
-              y:25,
-              x2:10,
-              y2:25
-            },
+            grid:grid,
             animation:false,
             tooltip: {},
             series: [series],
@@ -497,12 +508,7 @@ export default {
             title: {
               show: false
             },
-            grid:{
-              x:10,
-              y:25,
-              x2:10,
-              y2:25
-            },
+            grid:grid,
             animation:false,
             tooltip: {},
             legend:legend,
@@ -561,7 +567,14 @@ export default {
       }));
 
       this.itemList.push(new reportItem('order_assess_compare','text','19工单环比',function(obj){
-        return obj.assess_data.data.length - Number(obj.assess_data_last.data);
+        let delta = obj.assess_data.data.length - Number(obj.assess_data_last.data);
+        if(delta > 0){
+          return '增加'+delta;
+        }else if(delta < 0){
+          return '减少'+(-delta);
+        }else{
+          return '持平';
+        }
       }));
 
       this.itemList.push(new reportItem('order_local_sum','text','本地故障总量',function(obj){
@@ -573,7 +586,14 @@ export default {
       }));
 
       this.itemList.push(new reportItem('order_local_compare','text','本地工单环比',function(obj){
-        return obj.local_data.data.length - Number(obj.local_data_last.data);
+        let delta = obj.local_data.data.length - Number(obj.local_data_last.data);
+        if(delta > 0){
+          return '增加'+delta;
+        }else if(delta < 0){
+          return '减少'+(-delta);
+        }else{
+          return '持平';
+        }
       }));
 
       this.itemList.push(new reportItem('sum_picture','img','近4期政企用户故障量情况',async function(obj){
@@ -596,7 +616,7 @@ export default {
           obj.last_text.data,
           now
         ];
-        let legend = {show:true,top:20};
+        let legend = {show:true,bottom:5};
         let series = [{
           name: '19系统',
           type: 'bar',
@@ -2620,7 +2640,7 @@ export default {
             count++;
           }else{
             arr[i].count = count;
-            arr[i].rate = self.getNumberRate(arr[i].name,count);
+            arr[i].rate = self.getNumberRate(arr[i].name,count) + '%';
             count = 1;
           }
         }

@@ -1,5 +1,5 @@
 <template>
-  <div class="bg">
+  <div class="bg" v-loading="pageLoading" element-loading-background="#222933">
     <!-- <vxe-button type="text" icon="vxe-icon--d-arrow-left" id="btn_back" @click="back">返回</vxe-button> -->
     <div class="search">
       <el-input v-model="name_input" class="search_input" @input="search" :disabled="input_disable" :placeholder="placeholder"/>
@@ -74,18 +74,18 @@
           <div id="CM_phone" class="content">{{item.CM_phone}}</div>
         </el-col>
       </el-row>
-      <el-row>
+      <el-row v-if="canDo.updateCustomer">
         <el-col :span="24" class="item">
           <el-button type="primary" style="width: 100%;" @click="edit_customer">编辑</el-button>
         </el-col>
       </el-row>
     </div>
       <div id="button_group" :class="btn_class">
-        <el-button icon="el-icon-plus" type="primary" circle @click="new_customer"></el-button>
-        <el-button icon="el-icon-upload2" type="primary" circle @click="import_customer"></el-button>
+        <el-button v-if="canDo.newCustomer" icon="el-icon-plus" type="primary" circle @click="new_customer"></el-button>
+        <el-button v-if="canDo.uploadCustomer" icon="el-icon-upload2" type="primary" circle @click="import_customer"></el-button>
         <input ref="filElem" type="file" @change="get_file" />
       </div>
-    <div id="download_template" :class="btn_class">
+    <div v-if="canDo.downloadTemplate" id="download_template" :class="btn_class">
       <el-link :href="'http://'+this.$global_msg.HOST+'files/导入模板(请勿修改标题行).xlsx'" target="view_window">下载导入模板</el-link>
     </div>
   </div>
@@ -98,6 +98,8 @@ export default {
   },
   data:function(){
     return {
+      token:'',
+      pageLoading:true,
       show_class:'show_box hidden',
       hint_class:'',
       hint:'暂无相关记录',
@@ -115,11 +117,18 @@ export default {
       counter:null,
       btn_class:'',
       input_disable:false,
-      placeholder:'请输入客户名称（支持模糊搜索，用\'_\'匹配任意单个字符，用\'%\'匹配任意字符串)'
+      placeholder:'请输入客户名称（支持模糊搜索，用\'_\'匹配任意单个字符，用\'%\'匹配任意字符串)',
+      canDo:{},
+      doList:['getCustomerList','updateCustomer','uploadCustomer','downloadTemplate','newCustomer'],
     }
   },
   created:function(){
-    this.get_data();
+    let self = this;
+    this.token = this.$cookies.get('user_token');
+    this.assess_query(this.doList).then(function(){
+      self.pageLoading = false;
+      self.get_data();
+    })
   },
   methods:{
     count_start:function(e){
@@ -143,7 +152,6 @@ export default {
       let self = this;
       if(confirm("确认要删除这一条记录?")){
         let data = new FormData();
-        
         let id = (self.record[e.target.id]).id;
         data.append('customer_id',id);
         this.axios
@@ -174,10 +182,11 @@ export default {
       // });
     },
     new_customer:function(){
-      this.$router.push({
-        name:'add',
+      let rd = this.$router.resolve({
+        name: 'add',
         params:{}
       });
+      window.open(rd.href,'_blank');
     },
     edit_customer:function(e){
       let self = this;
@@ -190,13 +199,14 @@ export default {
       post.NM_phone = self.customer_list[index].NM_phone;
       post.C_manager = self.customer_list[index].C_manager;
       post.CM_phone = self.customer_list[index].CM_phone;
-      self.$router.push({
-        name:'add',
+      let rd = this.$router.resolve({
+        name: 'add',
         params:{
           post:post,
           search:self.name_input
         }
       });
+      window.open(rd.href,'_blank');
     },
     import_customer:function(){
       this.$refs.filElem.dispatchEvent(new MouseEvent('click'));
@@ -215,8 +225,9 @@ export default {
 
       let data = new FormData();
       data.append('name',this.name_input);
+      data.append('token',this.token);
       this.axios
-        .post('http://'+self.$global_msg.HOST+'scripts/get_customer_list.php',data)
+        .post('http://'+self.$global_msg.HOST+'scripts/customer/get_customer_list.php',data)
         .then(function(res){
           if(res.data.status == 'success'){
             let list =  res.data.result;
@@ -341,25 +352,54 @@ export default {
       let inputFile = this.$refs.filElem.files[0];
       let data = new FormData();
       data.append("file",inputFile);
+      data.append("token",this.token);
       this.axios
-        .post('http://'+self.$global_msg.HOST+'scripts/upload.php',data)
+        .post('http://'+self.$global_msg.HOST+'scripts/customer/upload.php',data)
         .then(function(res){
           self.input_disable = false;
           self.placeholder = '请输入客户名称（支持模糊搜索，用\'%\'匹配任意字符)';
           if(res.data.status == "success"){
-            alert("成功导入"+res.data.sum+"条记录!");
+            self.$message.success("成功导入"+res.data.sum+"条记录!");
           }else{
             console.log(res);
-            alert("错误:"+res.data.errMsg);
+            self.$message.error("错误:"+res.data.errMsg);
           }
           self.$refs.filElem.value = "";
         })
         .catch(function(err){
           console.log(err)
+          self.$message.error("错误:"+err);
           self.input_disable = false;
           self.placeholder = '请输入客户名称（支持模糊搜索，用\'%\'匹配任意字符)';
           self.$refs.filElem.value = "";
         });
+    },
+    assess_query:async function(list){
+      let self = this;
+      for(let i in list){
+        await this.canDoQuery(list[i]).then(function(res){
+          self.canDo[list[i]] = res;
+        })
+      }
+    },
+    canDoQuery:async function(op){
+      let data = new FormData();
+      data.append('token', this.token);
+      data.append('operation',op);
+      let canDo = false;
+      await this.axios
+        .post('http://' + this.$global_msg.HOST + 'scripts/system/canDoQuery.php', data)
+        .then(function(res) {
+          if(res.data.status == 'success'){
+            canDo = true;
+          }else{
+            console.log("can NOT do "+op+":"+res.data.errMsg);
+          }
+        })
+        .catch(function(e){
+          console.log("query error:"+e)
+        })
+      return canDo;
     },
     back:function(){
       if (this.$route.query.goindex === 'true') {
@@ -382,6 +422,7 @@ export default {
 .bg{
   width: 100%;
   height: 100%;
+  /*background: #2c3e50;*/
 }
 #btn_back{
   position: absolute;
@@ -435,7 +476,7 @@ export default {
 .show_box{
   height: fit-content;
   width:70%;
-  background: #FFFFFF;
+  background: #2c3e50;
   border-radius: 2vh;
   margin-left: 15%;
   margin-right: 15%;
@@ -443,10 +484,10 @@ export default {
   margin-top: 3vh;
   padding: 2%;
   transition: box-shadow 0.5s;
-  box-shadow: -1px 1px 5px 0px #AAAAAA;
+  box-shadow: -1px 1px 5px 0px #555555;
 }
 .show_box:hover{
-  box-shadow: -5px 5px 10px 0px #AAAAAA;
+  box-shadow: -5px 5px 10px 0px #555555;
 }
 .item{
  
@@ -566,12 +607,13 @@ input[type=file]{
   margin-top: 5px;
   padding: 0;
 }
-/*#download_template a{
-  font-size: 12px;
+#download_template .el-link{
   color: #515151;
-  text-decoration: underline;
-  user-select: none;
-}*/
+  font-size: 12px;
+}
+#download_template .el-link:hover{
+  color: #737373;
+}
 #download_template.hidden{
   display: none;
 }

@@ -1,7 +1,8 @@
 <template>
   <el-container class="main_container"
     v-loading="!loginStatus"
-    element-loading-text="加载中，请稍后...">
+    element-loading-text="加载中，请稍后..."
+    element-loading-background="#222933">
     <el-header>
       <div class="title">政企网络服务中台本地故障单管理系统</div>
       <div class="loginLabel" v-if="loginStatus">
@@ -22,7 +23,7 @@
             <!-- <i :class="isCollapse?'el-icon-arrow-right':'el-icon-arrow-left'"></i> -->
             <el-button type="text" :icon="isCollapse?'el-icon-arrow-right':'el-icon-arrow-left'">收起</el-button>
           </el-menu-item>
-          <el-submenu index="1" v-if="canDo.getList">
+          <el-submenu index="1" v-if="canDo.getOrder">
             <template slot="title">
               <i class="el-icon-s-operation"></i>
               <span slot="titile">工单状态</span>
@@ -57,13 +58,13 @@
             <el-menu-item index="2-2" id="m2-2" v-if="canDo.getCustomerList">
                 客户台账
             </el-menu-item>
-            <el-menu-item index="2-3" id="m2-3" v-if="canDo.assessOrder">
+            <el-menu-item index="2-3" id="m2-3" v-if="canDo.getAssessOrder">
                 统计图表
             </el-menu-item>
           </el-submenu>
         </el-menu>
       </el-aside>
-      <el-container style="width: 100%;height: 100%">
+      <el-container style="width: 100%;height: 100%" class="main_body">
         <components :is="comName" :params="params"></components>
       </el-container>
     </el-container>
@@ -95,7 +96,7 @@ export default {
       last_index:'1-1',
       params:{},
       canDo:{},
-      doList:['getList','export','getCustomerList','assessOrder']
+      doList:['getOrder','getList','export','getCustomerList','getAssessOrder']
     }
   },
   created:function(){
@@ -152,9 +153,9 @@ export default {
       this.toLogin();
     },
     init:function(){
-      if(!this.canDo.getList){
+      if(!this.canDo.getOrder){
         if(!this.canDo.getCustomerList){
-          if(!this.canDo.assessOrder){
+          if(!this.canDo.getAssessOrder){
             this.default_index = '0'
             this.$confirm('你暂时没有任何模块的权限,请联系系统管理员','提示',{
               type:'warning',
@@ -268,7 +269,11 @@ export default {
   margin: 0;
   height: 100%;
   width: 100%;
+  /*background: #2c3e50;*/
 }
+/*.main_body{
+  background: #2c3e50;
+}*/
 .title{
   display: flex;
   justify-content: center;

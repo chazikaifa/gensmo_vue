@@ -73,7 +73,7 @@
         <el-button type="info" @click="back" style="width: 100%">取消</el-button>
       </div>
       <div class="item half">
-        <el-button type="primary" @click="confirm" style="width: 100%">确认</el-button>
+        <el-button type="primary" :disabled="leaving" :loading="loading" @click="confirm" style="width: 100%">确认</el-button>
       </div>
     </div>
   </div>
@@ -86,6 +86,7 @@ export default {
   },
   data:function(){
     return {
+      token:'',
       unify_name:'',
       name:'',
       level:'',
@@ -96,7 +97,6 @@ export default {
       CM_phone:'',
       origin:'',
       remark:'',
-      host:'10.117.195.193/gensmo/',
       post:null,
       search:null,
       level_options:[
@@ -106,10 +106,13 @@ export default {
         {label:'四级',value:'四级'},
         {label:'五级',value:'五级'},
         {label:'六级',value:'六级'}
-      ]
+      ],
+      leaving:false,
+      loading:false,
     }
   },
   created:function(){
+    this.token = this.$cookies.get('user_token');
     this.fetchData();
   },
   activated:function(){
@@ -121,6 +124,7 @@ export default {
   methods:{
     confirm:function(){
       let self = this;
+      this.loading = true;
       if(this.post != null && this.post.id != null){
         this.update_customer();
       }else{
@@ -130,10 +134,12 @@ export default {
     new_customer:function(){
       let self = this;
       if(this.unify_name == undefined || this.unify_name == ''){
-        alert("统一客户名称不能为空!")
+        this.$message.error("统一客户名称不能为空!")
         return;
       }
       let data = new FormData();
+      data.append('token',this.token);
+
       data.append('unify_name',this.unify_name==undefined?'':this.unify_name);
       data.append("name",this.name==undefined?'':this.name);
       data.append("level",this.level==undefined?'':this.level);
@@ -145,24 +151,31 @@ export default {
       data.append("origin",this.origin==undefined?'':this.origin);
       data.append("remark",this.remark==undefined?'':this.remark);
       this.axios
-        .post('http://'+self.host+'scripts/add_customer.php',data)
+        .post('http://'+this.$global_msg.HOST+'scripts/customer/add_customer.php',data)
         .then(function(res){
+          self.loading = false;
           if(res.data.status == 'success'){
-            alert("添加成功")
-            self.back();
-          }
+            self.$message.success("添加成功,即将关闭窗口")
+            self.leaving = true;
+            setTimeout(self.back,1000);
+          }else{
+            self.$message.error(res.data.errMsg)
+          } 
         })
         .catch(function(err){
-          alert(err);
+          self.loading = false;
+          self.$message.error(err);
         })
     },
     update_customer:function(){
       let self = this;
       if(this.unify_name == ''){
-        alert("统一客户名称不能为空!")
+        self.$message.error("统一客户名称不能为空!")
         return;
       }
       let data = new FormData();
+      data.append('token',this.token);
+
       data.append('id',this.post.id);
       data.append('unify_name',this.unify_name==undefined?'':this.unify_name);
       data.append("name",this.name==undefined?'':this.name);
@@ -175,15 +188,20 @@ export default {
       data.append("origin",this.origin==undefined?'':this.origin);
       data.append("remark",this.remark==undefined?'':this.remark);
       this.axios
-        .post('http://'+self.host+'scripts/update_customer.php',data)
+        .post('http://'+this.$global_msg.HOST+'scripts/customer/update_customer.php',data)
         .then(function(res){
+          self.loading = false;
           if(res.data.status == 'success'){
-            alert("修改成功")
-            self.back();
+            self.$message.success("修改成功,即将关闭窗口")
+            self.leaving = true;
+            setTimeout(self.back,1000);
+          }else{
+            self.$message.error(res.data.errMsg)
           }
         })
         .catch(function(err){
-          alert(err);
+          self.loading = false;
+          self.$message.error(err);
         })
     },
     fetchData:function(){
@@ -204,14 +222,9 @@ export default {
       }
     },
     back:function(){
-      if (this.$route.query.goindex === 'true') {
-        this.$router.replace({
-          name: 'index',
-          params: {}
-        });
-      } else {
-        this.$router.back(-1);
-      }
+      window.opener = null;
+      window.open(' ','_self');
+      window.close();
     }
   },
 }
@@ -223,14 +236,14 @@ export default {
 #show_box{
   height: fit-content;
   width:70vw;
-  background: #FFFFFF;
+  background: #2c3e50;
   border-radius: 2vh;
   margin-left: 15vw;
   margin-right: 15vw;
   margin-bottom: 3vh;
   margin-top: 3vh;
   padding: 2vw;
-  box-shadow: -1px 1px 5px 0px #AAAAAA;
+  box-shadow: -1px 1px 5px 0px #555555;
 }
 .item{
  /* height: fit-content;*/

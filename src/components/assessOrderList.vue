@@ -1,5 +1,5 @@
 <template>
-  <div class="orderList_container">
+  <div class="orderList_container" v-loading="loading">
     <!-- <vxe-button type="text" icon="vxe-icon--d-arrow-left" id="btn_back" @click="back">返回</vxe-button> -->
     <vxe-table 
       class="table"
@@ -10,7 +10,6 @@
       :cell-class-name="cellClassName"
       size="mini"
       max-height="93%"
-      :loading="!dataReady"
       resizable
       :tooltip-config="{enterable:true}"
       :edit-config="{trigger: 'click', mode: 'cell', activeMethod: editMethod}"
@@ -64,11 +63,12 @@ export default {
   },
   data() {
     return {
-      edit: false,
+      token:'',
+      canDo:{},
+      doList:['getAssessOrder','updateAssessOrder'],
       days: [],
       dailyData: [],
       rawData: [],
-      dataReady: false,
       assessData: [],
       levelList: [{
         label: '一级',
@@ -159,17 +159,23 @@ export default {
         value: '480'
       }],
       before_edit: '',
+      loading:true
     }
   },
   created: function() {
-    this.init();
+    let self = this;
+    this.token = this.$cookies.get('user_token');
+    this.assess_query(this.doList).then(function(){
+      if(self.canDo.getAssessOrder){
+        self.init();
+      }else{
+        self.$message.error('[sumLine]:没有接口权限！')
+      }
+    })
   },
   updated: function() {},
   methods: {
     init: function() {
-      if (this.$route.query.edit == 1) {
-        this.edit = true;
-      }
       let end = new Date();
       end.setDate(end.getDate()-1);
       end.setHours(23);
@@ -188,10 +194,7 @@ export default {
       xTable.updateData();
     },
     editMethod() {
-      if (!this.edit) {
-        return false;
-      }
-      return true;
+      return this.canDo.updateAssessOrder;
     },
     beforeEdit: function({
       row,
@@ -212,6 +215,7 @@ export default {
         data.append('id', id);
         data.append('title', title);
         data.append('value', value);
+        data.append('token',this.token);
         this.axios
           .post('http://' + this.$global_msg.HOST + 'scripts/assess_order/update_single.php', data)
           .then(function(res) {
@@ -229,30 +233,34 @@ export default {
     },
     getData: function(start, end) {
       let self = this;
-      self.dataReady = false;
       let data = new FormData();
+      self.assessData = [];
       data.append('START', start);
       data.append('END', end);
+      data.append('token',this.token);
+      data.append('province','广东省广州市');
       this.axios
-        .post('http://' + this.$global_msg.HOST + 'scripts/assess_order/get_order_by_datetime.php', data)
+        .post('http://' + this.$global_msg.HOST + 'scripts/assess_order/get_gz_order_by_datetime.php', data)
         .then(function(res) {
           if (res.data.status == 'success') {
             self.rawData = res.data.result;
-
+            let ad = [];
             for (let i in self.rawData) {
               let data = self.rawData[i];
-              if (data.responsible_province == '广州' && (data.is_assess == 1 || (self.edit == true && data.is_trouble == null))) {
-                self.assessData.push(data);
+              if (data.responsible_province == '广州' && (data.is_assess == 1 || (self.canDo.updateAssessOrder == true && data.is_trouble == null))) {
+                ad.push(data);
               }
             }
-            console.log(self.assessData)
-            self.dataReady = true;
+            self.assessData = ad;
+            setTimeout(function(){
+              self.loading = false;
+            },1000)
           } else {
-            alert(res.data.errMsg);
+            self.$message.error('[assessOrderList]ERROR:'+res.data.errMsg)
           }
         })
         .catch(function(err) {
-          alert(err);
+          self.$message.error('[assessOrderList]NETWORK ERROR:'+err)
         });
     },
     cellClassName: function({
@@ -313,6 +321,33 @@ export default {
     }) {
       return cellValue.replace(/\[.*\]/, "");
     },
+    assess_query:async function(list){
+      let self = this;
+      for(let i in list){
+        await this.canDoQuery(list[i]).then(function(res){
+          self.canDo[list[i]] = res;
+        })
+      }
+    },
+    canDoQuery:async function(op){
+      let data = new FormData();
+      data.append('token', this.token);
+      data.append('operation',op);
+      let canDo = false;
+      await this.axios
+        .post('http://' + this.$global_msg.HOST + 'scripts/system/canDoQuery.php', data)
+        .then(function(res) {
+          if(res.data.status == 'success'){
+            canDo = true;
+          }else{
+            console.log("can NOT do "+op+":"+res.data.errMsg);
+          }
+        })
+        .catch(function(e){
+          console.log("query error:"+e)
+        })
+      return canDo;
+    },
     back:function(){
       if (this.$route.query.goindex === 'true') {
         this.$router.replace({
@@ -332,13 +367,16 @@ export default {
 .orderList_container{
   display: flex;
   position: relative;
+  background: #FFFFFF;
+  height: 100vh;
 }
 
 #tips{
   position: absolute;
   font-size: 10px;
-  bottom: -1vh;
+  bottom: 2vh;
   left: 2vw;
+  color:#777777;
 }
 
 .my-select {
@@ -352,10 +390,11 @@ export default {
   top:10px;
 }
 .orderList_container .table{
-  margin: 5vh 2vw 2vh 2vw;
+  margin: 2vh 2vw 0 2vw;
   width: 96vw;
   max-height: 91vh;
   user-select: none;
+  transition: none;
 }
 
 .orderList_container .cell_timeout{

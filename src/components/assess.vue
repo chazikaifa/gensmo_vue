@@ -1,12 +1,21 @@
 <template>
   <div class="container">
-    <div class='quter'>
-     <sumLine></sumLine>
-    </div>
-    <div class='quter'>
-      <orderCompare></orderCompare>
-    </div>
-    <timeout :wywData="rawData" :edit="edit" class="half"></timeout>
+      <el-row type="flex" justify="center" style="margin: 5px 0 20px 0">
+        <el-col :span="11">
+          <sumLine class="pic"></sumLine>
+        </el-col>
+        <el-col :span="1">
+        </el-col>
+        <el-col class="pic" :span="11">
+          <orderCompare class="pic"></orderCompare>
+        </el-col>
+      </el-row>
+
+    <el-row class="half">
+      <el-col :span="24">
+        <timeout style="height: 47vh"></timeout>
+      </el-col>
+    </el-row>
     <!-- <div id="import"><a href="javascript:void(0)" @click="import19">{{import_text}}</a><input ref="filElem" type="file" @change="get_file" /></div> -->
   </div>
 </template>
@@ -209,20 +218,10 @@ export default {
   box-sizing:border-box;
   overflow: hidden;
 }
-.quter{
-  display: inline-block;
-  width: 47%;
-  height: 44%;
-  margin: 0;
-  padding: 0 1.5% 0 1.5%;
+.pic{
+  background: #FFFFFF;
 }
-.half{
-  display: inline-block;
-  width: 100%;
-  height: 54%;
-  margin: 0;
-  padding: 0;
-}
+
 #import{
   /*position: absolute;
   bottom: 2vh;*/

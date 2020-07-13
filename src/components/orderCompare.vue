@@ -1,6 +1,6 @@
 <template>
   <div>
-    <ve-histogram v-loading="loading" :data="showData" :extend="extend" :settings="settings"></ve-histogram>
+    <ve-histogram element-loading-background="#222933" v-loading="loading" :data="showData" :extend="extend" :settings="settings"></ve-histogram>
   </div>
 </template>
 
@@ -10,10 +10,19 @@ export default {
   name: 'orderCompare',
   data(){
     return{
+      token:'',
+      canDo:{},
+      doList:['getAssessOrder'],
       extend:{
         title:{
           show:true,
           text:'所有故障量同比'
+        },
+        series:{
+          smooth:false
+        },
+        legend:{
+          bottom:'5%'
         },
         yAxis:function(item){
           item[1].splitLine = {
@@ -70,11 +79,19 @@ export default {
       ready:0,
       loading:true,
       timer:undefined,
-      playing:true
+      playing:true,
     }
   },
   created:function(){
-    this.init();
+    let self = this;
+    this.token = this.$cookies.get('user_token');
+    this.assess_query(this.doList).then(function(){
+      if(self.canDo.getAssessOrder){
+        self.init();
+      }else{
+        self.$message.error('[orderCompare]:没有接口权限！')
+      }
+    })
   },
   methods:{
     init:function(){
@@ -189,9 +206,12 @@ export default {
       let data = new FormData();
       data.append('START',start);
       data.append('END',end);
+      data.append('province','广东省广州市');
+      data.append('token',self.token);
       this.axios
         .post('http://'+self.$global_msg.HOST+'scripts/assess_order/get_gz_order_by_datetime.php',data)
         .then(function(res){
+          console.log(res);
           cb(res)
         })
         .catch(function(err){
@@ -223,24 +243,24 @@ export default {
       for(let i=0;i<=this.currentMonth;i++){
         let cur = this.rawData[i].sum;
         let last = this.rawDataLast[i].sum;
-        let rate = ((cur-last)/last).toFixed(2);
+        let rate = ((cur-last)/last).toFixed(4);
         rate = rate=='NaN'?0.00:rate;
         this.dataArray.rows[0][i] = {'时间':(i+1)+'月','去年故障量':last,'故障量':cur,'同比':rate};
 
         let reCur = this.rawData[i].reSum;
         let reLast = this.rawDataLast[i].reSum;
-        let reRate = ((reCur-reLast)/reLast).toFixed(2);
+        let reRate = ((reCur-reLast)/reLast).toFixed(4);
         reRate = reRate=='NaN'?0.00:reRate;
         this.dataArray.rows[1][i] = {'时间':(i+1)+'月','去年故障量':reLast,'故障量':reCur,'同比':reRate};
 
         let sumRate;
         let reSumRate;
         if(i == 0){
-          sumRate = ((this.rawData[i].sum - this.rawDataLast[11].sum)/this.rawDataLast[11].sum).toFixed(2);
-          reSumRate = ((this.rawData[i].reSum - this.rawDataLast[11].reSum)/this.rawDataLast[11].reSum).toFixed(2);
+          sumRate = ((this.rawData[i].sum - this.rawDataLast[11].sum)/this.rawDataLast[11].sum).toFixed(4);
+          reSumRate = ((this.rawData[i].reSum - this.rawDataLast[11].reSum)/this.rawDataLast[11].reSum).toFixed(4);
         }else{
-          sumRate = ((this.rawData[i].sum - this.rawData[i-1].sum)/this.rawData[i-1].sum).toFixed(2);
-          reSumRate = ((this.rawData[i].reSum - this.rawData[i-1].reSum)/this.rawData[i-1].reSum).toFixed(2);
+          sumRate = ((this.rawData[i].sum - this.rawData[i-1].sum)/this.rawData[i-1].sum).toFixed(4);
+          reSumRate = ((this.rawData[i].reSum - this.rawData[i-1].reSum)/this.rawData[i-1].reSum).toFixed(4);
         }
         sumRate = sumRate=='NaN'?0.00:sumRate;
         reSumRate = reSumRate=='NaN'?0.00:reSumRate;
@@ -287,6 +307,33 @@ export default {
         this.extend.toolbox.feature.myPlay.show = false;
         this.extend.toolbox.feature.myPause.show = true;
       }
+    },
+    assess_query:async function(list){
+      let self = this;
+      for(let i in list){
+        await this.canDoQuery(list[i]).then(function(res){
+          self.canDo[list[i]] = res;
+        })
+      }
+    },
+    canDoQuery:async function(op){
+      let data = new FormData();
+      data.append('token', this.token);
+      data.append('operation',op);
+      let canDo = false;
+      await this.axios
+        .post('http://' + this.$global_msg.HOST + 'scripts/system/canDoQuery.php', data)
+        .then(function(res) {
+          if(res.data.status == 'success'){
+            canDo = true;
+          }else{
+            console.log("can NOT do "+op+":"+res.data.errMsg);
+          }
+        })
+        .catch(function(e){
+          console.log("query error:"+e)
+        })
+      return canDo;
     }
   }
 }
