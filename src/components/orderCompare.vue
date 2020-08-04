@@ -8,6 +8,15 @@
 
 export default {
   name: 'orderCompare',
+  props: ['now'],
+  watch: {
+    now:{
+      // immediate:true,
+      handler(newVal,oldVal){
+        this.getData(newVal);
+      }
+    }
+  },
   data(){
     return{
       token:'',
@@ -95,12 +104,19 @@ export default {
   },
   methods:{
     init:function(){
-      console.log('[orderCompare]init');
-      this.getData();
+      this.getData(new Date());
     },
-    getData:function(){
+    getData:function(now){
       let self = this;
-      let end = new Date();
+      this.ready = 0;
+      self.rawData = [];
+      self.rawDataLast = [];
+      self.loading = true;
+      if(this.timer){
+        clearTimeout(this.timer);
+        this.timer = undefined;
+      }
+      let end = new Date(now);
       end.setDate(end.getDate()-1);
       end.setHours(23);
       end.setMinutes(59);
@@ -211,7 +227,7 @@ export default {
       this.axios
         .post('http://'+self.$global_msg.HOST+'scripts/assess_order/get_gz_order_by_datetime.php',data)
         .then(function(res){
-          console.log(res);
+          // console.log(res);
           cb(res)
         })
         .catch(function(err){

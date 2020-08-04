@@ -74,7 +74,7 @@
             <div class="label">{{order.step=='结单'?'历时(分钟)':'目前历时(分钟)'}}</div>
           </el-col>
           <el-col :span="11">
-            <div class="label">工单状态</div>
+            <div class="label">净历时(分钟)</div>
           </el-col>
           <el-col :span="1"></el-col>
         </el-row>
@@ -85,15 +85,7 @@
           </el-col>
           <el-col :span="11">
             <div class="content">
-              <el-select v-model="order.step" placeholder="请选择" :disabled="!edit" @change="changeStep">
-                <el-option
-                  v-for="item in stepList"
-                  :key="item.value"
-                  :label="item.label"
-                  :value="item.value">
-                </el-option>
-              </el-select>
-              <!-- <el-input v-model="order.step"></el-input> -->
+              <el-input v-model="order.net_duration" disabled></el-input>
             </div>
           </el-col>
           <el-col :span="1"></el-col>
@@ -110,6 +102,42 @@
           <el-col :span="1"></el-col>
           <el-col :span="22">
             <div class="content"><el-input v-model="order.trouble_symptom" :disabled="!edit"></el-input></div>
+          </el-col>
+          <el-col :span="1"></el-col>
+        </el-row>
+
+        <el-row>
+          <el-col :span="1"></el-col>
+          <el-col :span="11">
+            <div class="label">工单状态</div>
+          </el-col>
+          <el-col :span="11">
+            <div class="label">处理时限</div>
+          </el-col>
+          <el-col :span="1"></el-col>
+        </el-row>
+        <el-row>
+          <el-col :span="1"></el-col>
+          <el-col :span="11">
+            <div class="content">
+              <el-select v-model="order.step" placeholder="请选择" :disabled="!edit" @change="changeStep">
+                <el-option
+                  v-for="item in stepList"
+                  :key="item.value"
+                  :label="item.label"
+                  :value="item.value">
+                </el-option>
+              </el-select>
+            </div>
+          </el-col>
+          <el-col :span="11">
+            <div class="content">
+              <el-select v-model="order.time_limit" clearable :disabled="!edit">
+                <el-option key="0" label="120" value="120"></el-option>
+                <el-option key="1" label="240" value="240"></el-option>
+                <el-option key="2" label="480" value="480"></el-option>
+              </el-select>
+            </div>
           </el-col>
           <el-col :span="1"></el-col>
         </el-row>
@@ -220,39 +248,47 @@
             </div>
           </el-col>
           <el-col :span="11">
-            <div class="content"><el-input v-model="order.mark" disabled></el-input></div>
+            <div class="content">
+              <el-input v-model="order.mark" disabled></el-input>
+            </div>
           </el-col>
           <el-col :span="1"></el-col>
         </el-row>
 
-        <el-row>
+        
+        <el-row >
           <el-col :span="1"></el-col>
           <el-col :span="11">
             <div class="label">是否故障</div>
           </el-col>
-          <el-col :span="11">
-            <div class="label">是否对端</div>
-          </el-col>
+          <transition name="el-fade-in">
+            <el-col :span="11" v-if="order.is_trouble == '1'">
+              <div class="label">是否客户原因</div>
+            </el-col>
+          </transition>
           <el-col :span="1"></el-col>
         </el-row>
+        
         <el-row>
           <el-col :span="1"></el-col>
           <el-col :span="11">
             <div class="content">
               <el-select v-model="order.is_trouble" :clearable="true" placeholder="请选择" :disabled="!edit">
-                <el-option key="1" label="是" value="1"></el-option>
-                <el-option key="0" label="否" value="0"></el-option>
+              <el-option key="1" label="是" value="1"></el-option>
+              <el-option key="0" label="否" value="0"></el-option>
               </el-select>
             </div>
           </el-col>
-          <el-col :span="11">
-            <div class="content">
-              <el-select v-model="order.is_remote" :clearable="true" placeholder="请选择" :disabled="!edit">
-                <el-option key="1" label="是" value="1"></el-option>
-                <el-option key="0" label="否" value="0"></el-option>
-              </el-select>
-            </div>
-          </el-col>
+          <transition name="el-fade-in">
+            <el-col :span="11" v-if="order.is_trouble == '1'">
+              <div class="content">
+                <el-select v-model="order.is_customer" :clearable="true" @change="troubleClassChange" placeholder="请选择" :disabled="!edit">
+                  <el-option key="1" label="是" value="1"></el-option>
+                  <el-option key="0" label="否" value="0"></el-option>
+                </el-select>
+              </div>
+            </el-col>
+          </transition>
           <el-col :span="1"></el-col>
         </el-row>
 
@@ -285,7 +321,7 @@
           </el-col>
           <el-col :span="11">
             <div class="content">
-              <el-select v-model="order.trouble_reason" :clearable="true" placeholder="请选择" :disabled="!edit||order.trouble_class == ''">
+              <el-select v-model="order.trouble_reason" :clearable="true" placeholder="请选择" :disabled="!edit||order.trouble_class == ''||order.is_customer == 1">
                 <el-option
                   v-for="item in trouble_reason[order.trouble_class]"
                   :key="item.value"
@@ -316,11 +352,11 @@
           <el-row v-if="order.is_trouble == '1'">
             <el-col :span="1"></el-col>
             <el-col :span="11">
-              <div class="content"><el-input v-model="order.roomName" :disabled="!edit"></el-input></div>
+              <div class="content"><el-input v-model="order.roomName" :disabled="!edit||order.is_customer == 1"></el-input></div>
             </el-col>
             <el-col :span="11">
               <div class="content">
-                <el-select v-model="order.roomType" :clearable="true" placeholder="请选择" :disabled="!edit">
+                <el-select v-model="order.roomType" :clearable="true" placeholder="请选择" :disabled="!edit||order.is_customer == 1">
                   <el-option
                     v-for="item in roomType"
                     :key="item.value"
@@ -457,6 +493,172 @@
         </el-row>
       </div>
     </el-main>
+    <popButton
+      v-if="canDo.order_report"
+      type="primary"
+      icon="el-icon-share"
+      @click.native="showShare"
+      text='通报助手'
+      style="position: absolute;right: 36px;bottom: 36px;z-index: 100">
+    </popButton>
+    <el-dialog
+      title="通报助手"
+      :visible.sync="sharing"
+      width="80%"
+      center>
+
+      <el-row>
+        <el-col :span="1"></el-col>
+        <el-col :span="11"><div class="label">通报类型</div></el-col>
+        <el-col :span="11"><div class="label">电路编号</div></el-col>
+        <el-col :span="1"></el-col>
+      </el-row>
+      <el-row>
+        <el-col :span="1"></el-col>
+        <el-col :span="11">
+          <div class="content">
+            <el-select v-model="share_type">
+              <el-option key="0" label="首次" value="首次"></el-option>
+              <el-option key="1" label="进展" value="进展"></el-option>
+              <el-option key="2" label="恢复" value="恢复"></el-option>
+            </el-select>
+          </div>
+        </el-col>
+        <el-col :span="11">
+          <div class="content">
+            <el-input v-model="order.circuit_number" disabled></el-input>
+          </div>
+        </el-col>
+        <el-col :span="1"></el-col>
+      </el-row>
+
+      <el-row>
+        <el-col :span="1"></el-col>
+        <el-col :span="11"><div class="label">故障描述</div></el-col>
+        <el-col :span="11"><div class="label">故障开始时间</div></el-col>
+        <el-col :span="1"></el-col>
+      </el-row>
+      <el-row>
+        <el-col :span="1"></el-col>
+        <el-col :span="11">
+          <div class="content">
+            <el-input v-model="order.trouble_symptom" disabled></el-input>
+          </div>
+        </el-col>
+        <el-col :span="11">
+          <div class="content">
+            <el-input v-model="order.start_time" disabled></el-input>
+          </div>
+        </el-col>
+        <el-col :span="1"></el-col>
+      </el-row>
+
+      <el-row>
+        <el-col :span="1"></el-col>
+        <el-col :span="11"><div class="label">处理时限</div></el-col>
+        <el-col :span="11"><div class="label">发展区域</div></el-col>
+        <el-col :span="1"></el-col>
+      </el-row>
+      <el-row>
+        <el-col :span="1"></el-col>
+        <el-col :span="11">
+          <div class="content">
+            <el-input v-model="order.time_limit" disabled></el-input>
+          </div>
+        </el-col>
+        <el-col :span="11">
+          <div class="content">
+            <el-input v-model="start_department"></el-input>
+          </div>
+        </el-col>
+        <el-col :span="1"></el-col>
+      </el-row>
+
+      <el-row>
+        <el-col :span="1"></el-col>
+        <el-col :span="11"><div class="label">客户经理</div></el-col>
+        <el-col :span="11"><div class="label">网络经理</div></el-col>
+        <el-col :span="1"></el-col>
+      </el-row>
+      <el-row>
+        <el-col :span="1"></el-col>
+        <el-col :span="11">
+          <div class="content">
+            <el-input v-model="C_manager"></el-input>
+          </div>
+        </el-col>
+        <el-col :span="11">
+          <div class="content">
+            <el-input v-model="N_manager"></el-input>
+          </div>
+        </el-col>
+        <el-col :span="1"></el-col>
+      </el-row>
+
+      <el-row>
+        <el-col :span="1"></el-col>
+        <el-col :span="11"><div class="label">客户联系人</div></el-col>
+        <el-col :span="11"><div class="label">客户联系电话</div></el-col>
+        <el-col :span="1"></el-col>
+      </el-row>
+      <el-row>
+        <el-col :span="1"></el-col>
+        <el-col :span="11">
+          <div class="content">
+            <el-input v-model="order.contact_name" disabled></el-input>
+          </div>
+        </el-col>
+        <el-col :span="11">
+          <div class="content">
+            <el-input v-model="order.contact_number" disabled></el-input>
+          </div>
+        </el-col>
+        <el-col :span="1"></el-col>
+      </el-row>
+
+      <el-row>
+        <el-col :span="1"></el-col>
+        <el-col :span="11"><div class="label">通报人</div></el-col>
+        <el-col :span="11"><div class="label">通报人电话</div></el-col>
+        <el-col :span="1"></el-col>
+      </el-row>
+      <el-row>
+        <el-col :span="1"></el-col>
+        <el-col :span="11">
+          <div class="content">
+            <el-input v-model="reporter"></el-input>
+          </div>
+        </el-col>
+        <el-col :span="11">
+          <div class="content">
+            <el-input v-model="reporter_number"></el-input>
+          </div>
+        </el-col>
+        <el-col :span="1"></el-col>
+      </el-row>
+
+      <el-row>
+        <el-col :span="1"></el-col>
+        <el-col :span="22"><div class="label">通报输出(双击复制)</div></el-col>
+        <el-col :span="1"></el-col>
+      </el-row>
+      <el-row>
+        <el-col :span="1"></el-col>
+        <el-col :span="22">
+          <div class="content textarea" @click = "shareClick">
+            <el-input 
+              type="textarea" 
+              :value = "reportResult" 
+              autosize
+              disabled
+            >
+            </el-input>
+          </div>
+        </el-col>
+        <el-col :span="1"></el-col>
+      </el-row>
+
+    </el-dialog>
   </el-container>
 </template>
 
@@ -475,8 +677,13 @@ function haveDateTime(str){
   }
 }
 
+import popButton from './popButton.vue'
+
 export default {
   name: 'OrderEdit',
+  components:{
+    popButton:popButton
+  },
   data() {
     return {
       token:'',
@@ -484,7 +691,7 @@ export default {
       pageLoading:true,
       isLoading:false,
       canDo:{},
-      doList:['order_view','order_new','order_edit','update','getProcessList','process_update'],
+      doList:['order_view','order_new','order_edit','update','getProcessList','process_update','order_report'],
       edit:false,
       newOrder:false,
       stepList:[
@@ -505,14 +712,14 @@ export default {
           {label:'自然灾害',value:'自然灾害'},
           {label:'光缆劣化',value:'光缆劣化'},
           {label:'尾纤松动',value:'尾纤松动'},
-          {label:'客户内线',value:'客户内线'}
+          // {label:'客户内线',value:'客户内线'}
         ],
         '设备故障':[
           {label:'传输设备',value:'传输设备'},
           {label:'交换设备',value:'交换设备'},
           {label:'数据设备',value:'数据设备'},
           {label:'接入设备',value:'接入设备'},
-          {label:'客户设备',value:'客户设备'},
+          // {label:'客户设备',value:'客户设备'},
           {label:'客户端联通设备',value:'客户端联通设备'}
         ],
         '动力配套':[
@@ -525,7 +732,7 @@ export default {
           {label:'室分停电',value:'室分停电'},
           {label:'室分电池',value:'室分电池'},
           {label:'室分空调',value:'室分空调'},
-          {label:'客户动力',value:'客户动力'}
+          // {label:'客户动力',value:'客户动力'}
         ],
         '电缆故障':[
           {label:'市政施工',value:'市政施工'},
@@ -537,7 +744,7 @@ export default {
           {label:'自然灾害',value:'自然灾害'},
           {label:'电缆劣化',value:'电缆劣化'},
           {label:'电缆松动',value:'电缆松动'},
-          {label:'客户内线',value:'客户内线'}
+          // {label:'客户内线',value:'客户内线'}
         ]
       },
       business_type:[
@@ -593,6 +800,18 @@ export default {
       order:{},
       processList:[],
       timeCounter:undefined,
+      hover:false,
+      share_text:'',
+      hover_timer:undefined,
+      sharing:false,
+      share_type:'首次',
+      start_department:'',
+      N_manager:'',
+      C_manager:'',
+      reporter:'',
+      reporter_number:'',
+      result:'',
+      clickTimer:undefined
     }
   },
   created: function() {
@@ -612,6 +831,36 @@ export default {
         self.newOrder = true;
         self.pageLoading = false;
       });
+    }
+  },
+  computed:{
+    reportResult:function(){
+      let result = "【广州客户(" + this.order.name + ")故障" + this.share_type+"通报】\r\n" +
+      "电路编号：" + this.order.circuit_number + "\r\n" +
+      "发生时间：" + this.order.start_time+"\r\n" +
+      "故障要求处理时限：" + this.order.time_limit + "\r\n" +
+      "故障处理过程:\r\n";
+      for(let i in this.processList){
+        result = result + this.processList[i].time + ' ' + this.processList[i].description + '\r\n';
+      }
+      result = result +
+      "发展区域：" + this.start_department + '\r\n' +
+      "网络经理：" + this.N_manager + '\r\n' +
+      "客户联系方式：" + this.order.contact_name + ' ' + this.order.contact_number + '\r\n' +
+      "集响监控室发送人：" + this.reporter + ' ' + this.reporter_number + '\r\n' +
+      "集响监控联系电话：020-22993341\r\n" +
+      "本地";
+      if(this.order.mark){
+        result = result + ' ' + this.order.mark;
+      }
+      result = result + '/ ';
+      if(this.N_manager){
+        result = result + '@' + this.N_manager + ' ';
+      }
+      if(this.C_manager){
+        result = result + '@' + this.C_manager;
+      } 
+      return result;
     }
   },
   methods: {
@@ -635,7 +884,7 @@ export default {
         .catch(function(e){
           console.log("[getData]"+e);
           self.$message.error("[getData]Network Error:"+e);
-          self.pageLoading = true;
+          self.pageLoading = false;
         })
     },
     getProcessList:function(){
@@ -658,6 +907,25 @@ export default {
           self.$message.error("[getProcessList]Network Error:"+e);
         })
     },
+    getCustomerList:function(callback){
+      let self = this;
+      let data = new FormData();
+      data.append('token', this.token);
+      data.append('name',this.order.name);
+      this.axios
+        .post('http://' + this.$global_msg.HOST + 'scripts/customer/get_customer_list.php', data)
+        .then(function(res){
+          if(res.data.status == 'success'){
+            callback(res)
+          }else{
+            self.$message.error("[getCustomerList]error:"+res.data.errMsg);
+          }
+        })
+        .catch(function(e){
+          console.log("[getCustomerList]"+e);
+          self.$message.error("[getCustomerList]Network Error:"+e);
+        })
+    },
     refreshProcessList:function(){
       for(let i in this.processList){
         this.processList[i].list_order = i
@@ -665,6 +933,7 @@ export default {
       if(this.processList > 0){
         this.order.process = this.processList[this.processList.length - 1]
       }
+      this.changeTime();
     },
     deleteProcess:function(index){
       let self = this;
@@ -797,7 +1066,7 @@ export default {
       }
     },
     getOrderData:function(){
-      let paramList = ['id','name','start_time','end_time','step','trouble_symptom','link_id','process','circuit_number','contact_number','contact_name','area','is_trouble','is_remote','trouble_class','trouble_reason','business_type','remark','major','roomName','roomType','reasonDescription','hiddenDanger'];
+      let paramList = ['id','name','start_time','end_time','time','time_limit','net_duration','step','trouble_symptom','link_id','process','circuit_number','contact_number','contact_name','area','is_trouble','is_remote','trouble_class','trouble_reason','business_type','remark','major','roomName','roomType','reasonDescription','hiddenDanger'];
       let data = new FormData();
       for(let i in paramList){
         data.append(paramList[i],this.order[paramList[i]]==undefined?'':this.order[paramList[i]])
@@ -856,6 +1125,15 @@ export default {
         if(new Date(this.order.end_time) - new Date(this.order.start_time) < 0){
           return {result:'fail',msg:'结单时间小于故障发生时间'}
         }
+        if(!this.order.business_type){
+          return {result:'fail',msg:'请选择行业类型'};
+        }
+        if(!this.order.major){
+          return {result:'fail',msg:'请选择责任专业'};
+        }
+        if(!this.order.area){
+          return {result:'fail',msg:'请选择客户公司所在区域'};
+        }
       }
       let suspend = false;
       if(this.processList.length > 0){
@@ -909,22 +1187,22 @@ export default {
             }
             break;
           case '设备故障':
-            if(!this.order.roomName){
-              res =  {result:'fail',msg:'请填写机房名称！'}
-            }
             if(!this.order.roomType){
               res =  {result:'fail',msg:'请选择机房类型！'}
+            }
+            if(this.order.roomType !='客户机房' && !this.order.roomName){
+              res =  {result:'fail',msg:'请填写机房名称！'}
             }
             if(!this.order.reasonDescription){
               res =  {result:'fail',msg:'请简述故障原因（例：端口吊死，光模块故障）'}
             }
             break;
           case '动力配套':
-            if(!this.order.roomName){
-              res =  {result:'fail',msg:'请填写机房名称！'}
-            }
             if(!this.order.roomType){
               res =  {result:'fail',msg:'请选择机房类型！'}
+            }
+            if(this.order.roomType !='客户机房'&&!this.order.roomName){
+              res =  {result:'fail',msg:'请填写机房名称！'}
             }
             if(!this.order.reasonDescription){
               res =  {result:'fail',msg:'请简述故障原因（例：物业拉闸，市电停电））'}
@@ -1032,7 +1310,26 @@ export default {
       }
     },
     troubleClassChange:function(e){
-      this.order.trouble_reason = '';
+      if(this.order.is_customer == '1'){
+        switch(this.order.trouble_class){
+          case '光缆故障':
+          case '电缆故障':
+            this.order.trouble_reason = '客户内线';
+            break;
+          case '设备故障':
+            this.order.trouble_reason = '客户设备';
+            break;
+          case '动力配套':
+            this.order.trouble_reason = '客户动力';
+            break;
+          default:
+            this.order.trouble_reason = '';
+        }
+        this.order.roomType = '客户机房';
+      }else{
+        this.order.trouble_reason = '';
+        this.order.roomType = '';
+      }
     },
     changeStep:function(){
       if(this.order.step != '结单'){
@@ -1044,11 +1341,30 @@ export default {
       if(this.timeCounter){
         clearTimeout(this.timeCounter);
       }
+      let suspend = false;
+      let st = null;
+      let suspend_time = 0;
+      for(let i in this.processList){
+        if(this.processList[i].mark == 'set_suspend'){
+          suspend = true;
+          st = new Date(this.processList[i].time);
+        }else if(this.processList[i].mark == 'unset_suspend' && suspend){
+          suspend = false;
+          suspend_time = suspend_time + (new Date(this.processList[i].time) - st);
+        }
+      }
+      if(suspend && st){
+        suspend_time = suspend_time + (new Date() - st);
+      }
+      suspend_time = (suspend_time/60000).toFixed(2);
+
       if(this.order.start_time && this.order.end_time){
-        this.order.time = ((new Date(this.order.end_time) - new Date(this.order.start_time))/60000).toFixed(0);
+        this.order.time = ((new Date(this.order.end_time) - new Date(this.order.start_time))/60000).toFixed(2);
+        this.order.net_duration = (this.order.time - suspend_time).toFixed(2);
       }else if(this.order.start_time){
-        this.order.time = ((new Date() - new Date(this.order.start_time))/60000).toFixed(0);
-        this.timeCounter = setTimeout(this.changeTime,60000);
+        this.order.time = ((new Date() - new Date(this.order.start_time))/60000).toFixed(2);
+        this.order.net_duration = (this.order.time - suspend_time).toFixed(2);
+        this.timeCounter = setTimeout(this.changeTime,10000);
       }else{
         this.order.time = '';
       }
@@ -1062,6 +1378,56 @@ export default {
         case 'unset_suspend':  
           return '解挂';
       }
+    },
+    hoverIn:function(){
+      let self = this;
+      this.hover = true;
+      if(this.hover_timer){
+        clearTimeout(this.hover_timer);
+      }
+      this.hover_timer = setTimeout(function(){
+        self.share_text = '通报助手';
+        self.hover_timer = undefined;
+      },250)
+    },
+    hoverOut:function(){
+      this.hover = false;
+      this.share_text = '';
+      if(this.hover_timer){
+        clearTimeout(this.hover_timer)
+        this.hover_timer = undefined;
+      }
+    },
+    shareClick:function(){
+      let self = this;
+      if(this.clickTimer){
+        this.$copyText(this.reportResult).then(res => {
+            self.$message.success('已复制到剪切板！');
+          },
+          err => {
+            self.$message.error('复制失败，请手动复制！');
+            console.log(err);
+          }
+        );
+        clearTimeout(this.clickTimer)
+        this.clickTimer = undefined
+      }else{
+        this.clickTimer = setTimeout(function(){
+          self.clickTimer = undefined;
+        },500)
+      }
+    },
+    showShare:function(){
+      let self = this;
+      this.getCustomerList(function(res){
+        if(res.data.result.length > 0){
+          let data = res.data.result[0];
+          self.N_manager = data.N_manager;
+          self.C_manager = data.C_manager;
+          self.start_department = data.start_department;
+        }
+      })
+      this.sharing = true;
     },
     assess_query:async function(list){
       let self = this;
@@ -1143,7 +1509,21 @@ export default {
   display: flex;
   align-items: center;
 }
+.content.textarea{
+  height: fit-content;
+}
 .content .el-select{
   width:100%;
+}
+#btn_share{
+  position: absolute;
+  right: 36px;
+  bottom: 36px;
+  width: 42px;
+  z-index: 100;
+  transition: all .5s;
+}
+#btn_share:hover{
+  width: 122px;
 }
 </style>

@@ -65,6 +65,7 @@ export default {
     return {
       token:'',
       canDo:{},
+      dateNow:new Date(),
       doList:['getAssessOrder','updateAssessOrder'],
       days: [],
       dailyData: [],
@@ -165,6 +166,9 @@ export default {
   created: function() {
     let self = this;
     this.token = this.$cookies.get('user_token');
+    if(this.$route.query.now){
+      this.dateNow = new Date(this.$route.query.now)
+    }
     this.assess_query(this.doList).then(function(){
       if(self.canDo.getAssessOrder){
         self.init();
@@ -176,7 +180,7 @@ export default {
   updated: function() {},
   methods: {
     init: function() {
-      let end = new Date();
+      let end = new Date(this.dateNow);
       end.setDate(end.getDate()-1);
       end.setHours(23);
       end.setMinutes(59);

@@ -61,6 +61,9 @@
             <el-menu-item index="2-3" id="m2-3" v-if="canDo.getAssessOrder">
                 统计图表
             </el-menu-item>
+            <el-menu-item index="2-4" id="m2-4" v-if="canDo.reportGenerator">
+                自动报表
+            </el-menu-item>
           </el-submenu>
         </el-menu>
       </el-aside>
@@ -76,6 +79,7 @@ import assess from '@/components/assess.vue'
 import search from '@/components/search.vue'
 import orderExport from '@/components/orderExport.vue'
 import orderList from '@/components/orderList.vue'
+import reportGenerator from '@/components/reportGenerator.vue'
 
 export default {
   name: 'Index',
@@ -83,7 +87,8 @@ export default {
     assess:assess,
     search:search,
     orderExport:orderExport,
-    orderList:orderList
+    orderList:orderList,
+    reportGenerator:reportGenerator
   },
   data() {
     return {
@@ -96,7 +101,7 @@ export default {
       last_index:'1-1',
       params:{},
       canDo:{},
-      doList:['getOrder','getList','export','getCustomerList','getAssessOrder']
+      doList:['getOrder','getList','export','getCustomerList','getAssessOrder','reportGenerator']
     }
   },
   created:function(){
@@ -219,6 +224,9 @@ export default {
           break;
         case '2-3':
           this.comName = 'assess';
+          break;
+        case '2-4':
+          this.comName = 'reportGenerator';
           break;
       }
       if(index != '0'){

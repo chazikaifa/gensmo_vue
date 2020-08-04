@@ -1,19 +1,31 @@
 <template>
   <div class="container">
-      <el-row type="flex" justify="center" style="margin: 5px 0 20px 0">
-        <el-col :span="11">
-          <sumLine class="pic"></sumLine>
-        </el-col>
-        <el-col :span="1">
-        </el-col>
-        <el-col class="pic" :span="11">
-          <orderCompare class="pic"></orderCompare>
-        </el-col>
-      </el-row>
 
-    <el-row class="half">
+    <el-row type="flex" justify="center">
+      <el-col :span="4">
+        <el-date-picker
+          v-model="dateShow"
+          :editable="false"
+          format="yyyy年MM月dd日"
+          type="date">
+        </el-date-picker>
+      </el-col>
+    </el-row>
+
+    <el-row type="flex" justify="center" style="margin: 5px 0 20px 0">
+      <el-col :span="11">
+        <sumLine :now="dateShow" class="pic"></sumLine>
+      </el-col>
+      <el-col :span="1">
+      </el-col>
+      <el-col class="pic" :span="11">
+        <orderCompare :now="dateShow" class="pic"></orderCompare>
+      </el-col>
+    </el-row>
+
+    <el-row>
       <el-col :span="24">
-        <timeout style="height: 47vh"></timeout>
+        <timeout :now="dateShow" style="height: 43vh"></timeout>
       </el-col>
     </el-row>
     <!-- <div id="import"><a href="javascript:void(0)" @click="import19">{{import_text}}</a><input ref="filElem" type="file" @change="get_file" /></div> -->
@@ -58,105 +70,15 @@ export default {
       importFlag:false,
       import_text:'导入19数据（请选择“沃运维”系统导出的故障单列表）',
       timer:undefined,
-      edit:false
+      edit:false,
+      dateShow:null
     }
   },
   created:function(){
-    this.init();
+    this.dateShow = new Date();
   },
   methods:{
     init:function(){
-      if(this.$route.query.edit == 1){
-        this.edit = true;
-      }
-      let end = new Date();
-      end.setDate(end.getDate()-1);
-      end.setHours(23);
-      end.setMinutes(59);
-      end.setSeconds(59);
-      let start = new Date(end);
-      start.setDate(1);
-      start.setHours(0);
-      start.setMinutes(0);
-      start.setSeconds(0);
-      this.getData(start.Format('yyyy-MM-dd hh:mm:ss'),end.Format('yyyy-MM-dd hh:mm:ss'))
-    },
-    getData:function(start,end){
-      let self = this;
-      if(self.timer != undefined){
-        clearTimeout(self.timer);
-        self.timer = undefined;
-      }
-      self.dataReady = false;
-      self.dataLocalReady = false;
-      let data = new FormData();
-      data.append('START',start);
-      data.append('END',end);
-      this.axios
-        .post('http://'+self.$global_msg.HOST+'scripts/assess_order/get_order_by_datetime.php',data)
-        .then(function(res){
-          if(res.data.status == 'success'){
-            self.rawData = res.data.result;
-            self.sum = res.data.sum;
-            self.dataReady = true;
-            if(self.dataReady && self.dataLocalReady){
-              self.setTimer();
-            }
-          }else{
-            alert(res.data.errMsg);
-          }
-        })
-        .catch(function(err){
-          alert(err);
-        });
-
-      let localData = new FormData();
-      localData.append('id','');
-      localData.append('name','');
-      localData.append('start_time_start','');
-      localData.append('start_time_end','');
-      localData.append('end_time_start',start);
-      localData.append('end_time_end',end);
-      localData.append('number','');
-      localData.append('index','');
-      localData.append('limit','');
-      localData.append('step','');
-      this.axios
-        .post('http://'+self.$global_msg.HOST+'scripts/getList.php',localData)
-        .then(function(res){
-          if(res.data.status == 'success'){
-            self.rawLocalData = res.data.result;
-
-            self.dataLocalReady = true;
-            if(self.dataReady && self.dataLocalReady){
-              self.setTimer();
-            }
-          }else{
-            alert(res.data.errMsg);
-          }
-        })
-        .catch(function(err){
-          alert(err);
-        })
-    },
-    setTimer:function(){
-      let self = this;
-      let end = new Date();
-      end.setDate(end.getDate()-1);
-      end.setHours(23);
-      end.setMinutes(59);
-      end.setSeconds(59);
-      let start = new Date(end);
-      start.setDate(1);
-      start.setHours(0);
-      start.setMinutes(0);
-      start.setSeconds(0);
-      if(this.timer != undefined){
-        clearTimeout(this.timer);
-      }
-      this.timer = setTimeout(function(){
-        self.getData(start.Format('yyyy-MM-dd hh:mm:ss'),end.Format('yyyy-MM-dd hh:mm:ss'));
-      },600000);
     },
     import19:function(){
       this.$refs.filElem.dispatchEvent(new MouseEvent('click'));

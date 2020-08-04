@@ -50,9 +50,8 @@ const DEFAULT_COLORS = [
   '#997300', '#264478', '#43682B',
   '#7CAFDD'
 ];
-var HOST = "10.117.195.193/gensmo/";
-var TOP33_sum = 13;
-var TOP33_time_sum = 1300.88;
+var TOP33_sum = 61;
+var TOP33_time_sum = 6758.4667;
 var TOP33_NUMBER_SUM = 3731;
 Date.prototype.Format = function(fmt)   
 { //author: meizz   
@@ -129,6 +128,9 @@ export default {
   },
   data(){
     return{
+      token:'',
+      canDo:{},
+      doList:['getList','getAssessOrder','savePic','circuitNumberSum','getReportRecord'],
       rawData:[],
       assess_data:[],
       assess_data_all:[],
@@ -165,7 +167,11 @@ export default {
     }
   },
   created:function(){
-    this.init();
+    let self = this;
+    this.token = this.$cookies.get('user_token');
+    this.assess_query(this.doList).then(function(){
+      self.init();
+    });
   },
   updated:function(){
   },
@@ -174,10 +180,37 @@ export default {
       this.getDefault();
       this.loadSettings();
     },
+    assess_query:async function(list){
+      let self = this;
+      for(let i in list){
+        await this.canDoQuery(list[i]).then(function(res){
+          self.canDo[list[i]] = res;
+        })
+      }
+    },
+    canDoQuery:async function(op){
+      let data = new FormData();
+      data.append('token', this.token);
+      data.append('operation',op);
+      let canDo = false;
+      await this.axios
+        .post('http://' + this.$global_msg.HOST + 'scripts/system/canDoQuery.php', data)
+        .then(function(res) {
+          if(res.data.status == 'success'){
+            canDo = true;
+          }else{
+            console.log("can NOT do "+op+":"+res.data.errMsg);
+          }
+        })
+        .catch(function(e){
+          console.log("query error:"+e)
+        })
+      return canDo;
+    },
     getDefault:function(){
       let self = this;
       this.axios
-        .get('http://'+HOST+'scripts/assess_order/reportData.php')
+        .get('http://'+self.$global_msg.HOST+'scripts/report/reportData.php')
         .then(function(res){
           //console.log(res);
           for(let i in res.data){
@@ -246,7 +279,7 @@ export default {
       data.append('START',all_start.Format('yyyy-MM-dd hh:mm:ss'));
       data.append('END',end.Format('yyyy-MM-dd hh:mm:ss'));
       this.axios
-        .post('http://'+HOST+'scripts/assess_order/get_order_by_datetime.php',data)
+        .post('http://'+self.$global_msg.HOST+'scripts/assess_order/get_order_by_datetime.php',data)
         .then(function(res){
           if(res.data.status == 'success'){
             self.rawData = res.data.result;
@@ -280,7 +313,7 @@ export default {
       localData.append('end_time_end',end.Format('yyyy-MM-dd hh:mm:ss'));
       localData.append('step','');
       this.axios
-        .post('http://'+HOST+'scripts/get_list_with_mark.php',localData)
+        .post('http://'+self.$global_msg.HOST+'scripts/get_list_with_mark.php',localData)
         .then(function(res){
           if(res.data.status == 'success'){
             self.rawLocalData = res.data.result;
@@ -306,7 +339,7 @@ export default {
       let numberData = new FormData();
       numberData.append('mark','');
       this.axios
-        .post('http://'+HOST+'scripts/assess_order/circuit_number_sum.php',numberData)
+        .post('http://'+self.$global_msg.HOST+'scripts/report/circuit_number_sum.php',numberData)
         .then(function(res){
           if(res.data.status == 'success'){
             self.number_list = res.data.result;
@@ -383,7 +416,7 @@ export default {
       let result = ''
       let data = new FormData();
       data.append('baseimg',url);
-      await this.axios.post('http://'+HOST+'scripts/assess_order/savePic.php?action=save',data)
+      await this.axios.post('http://'+this.$global_msg.HOST+'scripts/report/savePic.php?action=save',data)
         .then(function(res){
           result = res.data;
         })
@@ -423,7 +456,7 @@ export default {
       data.append('DATA',json);
       data.append('type',this.dataObject.type.data);
       this.axios
-        .post('http://'+HOST+'scripts/assess_order/read_word.php',data)
+        .post('http://'+self.$global_msg.HOST+'scripts/report/read_word.php',data)
         .then(function(res){
           //console.log(res);
           self.create_loading = false;
@@ -433,7 +466,7 @@ export default {
             self.result.pop();
           }
           if(res.data.status == 'success'){
-            window.open('http://'+HOST+'files/'+res.data.name);
+            window.open('http://'+self.$global_msg.HOST+'files/'+res.data.name);
           }else{
             alert(res.data.errMsg);
           }
@@ -2550,7 +2583,7 @@ export default {
               trouble_reason:ad[i].trouble_reason,
               time:ad[i].time,
               is_trouble:ad[i].is_trouble,
-              is_assess:ad[i].is_assess,
+              is_assess:ad[i].responsible_province == '广州'?'1':'0',
               timeout:ad[i].time_out
             })
           }
@@ -3033,7 +3066,7 @@ export default {
 
       this.itemList.push(new reportItem('TOP210_assess_all_timeout_detail','text','TOP210累计责任及时率情况',function(obj){
         let percent = ((1 - obj.TOP210_assess_all_timeout.data / obj.TOP210_assess_all_sum.data) * 100).toFixed(2);
-        return percent + '%' + (percent > 90 ? "(>90%)，达标" : "(<90%)，不达标");
+        return percent + '%' + (percent > 98 ? "(>98%)，达标" : "(<98%)，不达标");
       }));
 
       this.itemList.push(new reportItem('TOP800_1_2_assess_sum','text','TOP800家1-2级责任故障',function(obj){
@@ -3041,7 +3074,7 @@ export default {
         let sum = 0;
         let arr = [];
         for(let i in ad){
-          if(ad[i].assess_TOPN == '1' && ad[i].is_assess == '1' && (ad[i].level == '一级' || ad[i].level == '二级')){
+          if(ad[i].assess_TOPN == '1' && ad[i].is_assess == '1'&& (ad[i].level == '一级' || ad[i].level == '二级')){
             sum++;
             arr.push(ad[i]);
           }
@@ -3114,7 +3147,7 @@ export default {
 
       this.itemList.push(new reportItem('TOP800_1_2_assess_all_timeout_detail','text','TOP800家累计1-2级责任及时率情况',function(obj){
         let percent = ((1 - obj.TOP800_1_2_assess_all_timeout.data / obj.TOP800_1_2_assess_all_sum.data) * 100).toFixed(2);
-        return percent + '%' + (percent > 90 ? "(>90%)，达标" : "(<90%)，不达标");
+        return percent + '%' + (percent > 95 ? "(>95%)，达标" : "(<95%)，不达标");
       }));
 
       this.itemList.push(new reportItem('TOP800_3_6_assess_sum','text','TOP800家3-6级责任故障',function(obj){

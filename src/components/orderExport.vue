@@ -184,6 +184,7 @@ export default {
                 self.axios
                   .post('http://' + self.$global_msg.HOST + 'scripts/order/export.php', data)
                   .then(function(res) {
+                    console.log(res);
                     if(res.data.status == 'success'){
                       window.open('http://' + self.$global_msg.HOST + 'files/' + res.data.fileName);
                     }else{

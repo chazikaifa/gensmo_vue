@@ -37,8 +37,8 @@
 </template>
 
 <script>
-var TOP33_sum = 47;
-var TOP33_time_sum = 5559.13;
+var TOP33_sum = 61;
+var TOP33_time_sum = 6758.4667;
 Date.prototype.Format = function(fmt) { //author: meizz   
   var o = {
     "M+": this.getMonth() + 1, //月份   
@@ -222,6 +222,7 @@ export default {
       rawData: [],
       dataReady: false,
       assessData: [],
+      dateNow:new Date(),
       now: "",
       dailyDesc: "",
       desc_arr: [{
@@ -274,6 +275,9 @@ export default {
   created: function() {
     let self = this;
     this.token = this.$cookies.get('user_token');
+    if(this.$route.query.now){
+      this.dateNow = new Date(this.$route.query.now)
+    }
     this.countDay();
     this.assess_query(this.doList).then(function(){
       if(self.canDo.getAssessOrder){
@@ -287,7 +291,7 @@ export default {
   methods: {
     //必须在渲染完成之前填充days数组，否则动态生成的列不能正常显示
     countDay:function(){
-      let now = new Date();
+      let now = new Date(this.dateNow);
       this.now = now.Format("yyyy年MM月dd日");
       now.setDate(now.getDate() - 1);
       now.setHours(23);
@@ -334,7 +338,7 @@ export default {
         targetType: '<'
       };
 
-      let now = new Date();
+      let now = new Date(this.dateNow);
       now.setDate(now.getDate() - 1);
       now.setHours(23);
       now.setMinutes(59);

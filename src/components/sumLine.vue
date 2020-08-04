@@ -27,6 +27,15 @@ Date.prototype.Format = function(fmt)
 }
 export default {
   name: 'sumLine',
+  props: ['now'],
+  watch: {
+    now:{
+      // immediate:true,
+      handler(newVal,oldVal){
+        this.getData(newVal);
+      }
+    }
+  },
   data(){
     return{
       token:'',
@@ -124,11 +133,21 @@ export default {
   },
   methods:{
     init:function(){
-      this.getData();
+      this.getData(new Date());
     },
-    getData:function(){
+    getData:function(now){
       let self = this;
-      let end = new Date();
+      this.ready = 0;
+      self.rawData = [];
+      self.rawDataLast = [];
+      self.loading = true;
+      if(this.timer){
+        clearTimeout(this.timer);
+        this.timer = undefined;
+      }
+      this.sumDataArray.rows = [];
+      this.sumDataArray.markPointData = [[],[],[],[]];
+      let end = new Date(now);
       end.setDate(end.getDate()-1);
       end.setHours(23);
       end.setMinutes(59);
@@ -149,9 +168,9 @@ export default {
         if(res.data.status == 'success'){
           self.rawData = res.data.result;
           self.ready++;
-          // self.getSum();
+          // self.getSum(now);
           if(self.ready >= 4){
-            self.get_union();
+            self.get_union(now);
           }
         }else{
           self.$message.error("[sumLine]rawDataLast Error:"+res.data.errMsg);
@@ -163,7 +182,7 @@ export default {
           self.rawDataLast = res.data.result;
           self.ready++;
           if(self.ready >= 4){
-            self.get_union();
+            self.get_union(now);
           }
         }else{
           self.$message.error("[sumLine]rawData Error:"+res.data.errMsg);
@@ -174,9 +193,9 @@ export default {
         if(res.data.status == 'success'){
           self.rawLocalData = res.data.result;
           self.ready++;
-          self.getLocalSum();
+          self.getLocalSum(now);
           if(self.ready >= 4){
-            self.get_union();
+            self.get_union(now);
           }
         }else{
           self.$message.error("[sumLine]rawLocalData Error:"+res.data.errMsg);
@@ -228,10 +247,10 @@ export default {
           self.$message.error("[sumLine]getLocalOrder Error:"+err);
         })
     },
-    getSum(){
+    getSum(end){
       let dateArr = [];
       let row = [];
-      let now = new Date();
+      let now = new Date(end);
       now.setDate(now.getDate()-1);
       now.setHours(0);
       now.setMinutes(0);
@@ -268,10 +287,10 @@ export default {
       }
       this.sumDataArray.rows[0] = row;
     },
-    getLocalSum(){
+    getLocalSum(end){
       let dateArr = [];
       let row = [];
-      let now = new Date();
+      let now = new Date(end);
       now.setDate(now.getDate()-1);
       now.setHours(0);
       now.setMinutes(0);
@@ -305,9 +324,9 @@ export default {
       }
       this.sumDataArray.rows[2] = row;
     },
-    get_union:function(){
+    get_union:function(end){
       let dateArr = [];
-      let now = new Date();
+      let now = new Date(end);
       now.setDate(now.getDate()-1);
       now.setHours(0);
       now.setMinutes(0);
@@ -404,15 +423,15 @@ export default {
       this.sumDataArray.rows[3] = union_row1;
       this.loading = false;
       let data = {
-        columns:this.sumDataArray.columns[0],
-        rows:this.sumDataArray.rows[0]
+        columns:this.sumDataArray.columns[this.sumDataArray.flag],
+        rows:this.sumDataArray.rows[this.sumDataArray.flag]
       }
       this.showData = data;
       this.extend.title = {
         show:true,
-        text:this.sumDataArray.title[0]
+        text:this.sumDataArray.title[this.sumDataArray.flag]
       }
-      this.settings.area = this.sumDataArray.area[0];
+      this.settings.area = this.sumDataArray.area[this.sumDataArray.flag];
       this.timer = setTimeout(this.change,5000);
     },
     change:function(){
@@ -441,7 +460,7 @@ export default {
         text:this.sumDataArray.title[i]
       }
       this.extend.series.markPoint.data = this.sumDataArray.markPointData[i];
-      console.log(this.extend.series.markPoint);
+      // console.log(this.extend.series.markPoint);
       this.settings.area = this.sumDataArray.area[i];
     },
     play:function(){

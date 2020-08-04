@@ -64,6 +64,15 @@
 
 export default {
   name: 'timeout',
+  props: ['now'],
+  watch: {
+    now:{
+      // immediate:true,
+      handler(newVal,oldVal){
+        this.init(newVal);
+      }
+    }
+  },
   data() {
     return {
       token:'',
@@ -100,17 +109,17 @@ export default {
     this.token = this.$cookies.get('user_token');
     this.assess_query(this.doList).then(function(){
       if(self.canDo.getAssessOrder){
-        self.init();
+        self.init(new Date());
       }else{
         self.$message.error('[timeout]:没有接口权限!')
       }
     })
-    this.init();
   },
   methods: {
-    init: function() {
+    init: function(now) {
       let self = this;
-      let end = new Date();
+      this.loading = true;
+      let end = new Date(now);
       end.setDate(end.getDate()-1);
       end.setHours(23);
       end.setMinutes(59);
@@ -121,8 +130,8 @@ export default {
       start.setMinutes(0);
       start.setSeconds(0);
       this.getOrder(start.Format('yyyy-MM-dd hh:mm:ss'),end.Format('yyyy-MM-dd hh:mm:ss'),function(res){
-        self.count();
         self.rawData = res.data.result
+        self.count();
       })
     },
     getOrder:function(start,end,cb){
@@ -238,6 +247,7 @@ export default {
 
           //TOP210计算的是净历时，需在最后计算
           if (data.TOP210 == '1' && dutyFlag) {
+            showFlag = true;
             timeoutFlag = timeoutFlag || Number(data.net_duration) > 120;
             timeCount[4].sum++;
             timeCount[4].timeSum = timeCount[4].timeSum + Number(data.net_duration);
@@ -293,11 +303,7 @@ export default {
       }
       this.timeCount = timeCount;
 
-      //表格数据更改渲染不能同步完成，等一秒再解除loading
-      let self = this;
-      setTimeout(function(){
-        self.loading = false
-      },1000)
+      this.loading = false;
 
       this.reduce = [{
         id: '',
@@ -422,14 +428,18 @@ export default {
     toDaily: function() {
       let rd = this.$router.resolve({
         name: 'daily',
-        params: {}
+        query: {
+          now:this.now.Format('yyyy-MM-dd')
+        }
       });
       window.open(rd.href,'_blank');
     },
     toList: function() {
       let rd = this.$router.resolve({
         name: 'assessOrderList',
-        params: {}
+        query: {
+          now:this.now.Format('yyyy-MM-dd')
+        }
       });
       window.open(rd.href,'_blank');
     },

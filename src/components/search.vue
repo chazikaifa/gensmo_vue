@@ -5,7 +5,7 @@
       <el-input v-model="name_input" class="search_input" @input="search" :disabled="input_disable" :placeholder="placeholder"/>
     </div>
     <div id="hint" :class="hint_class">{{hint}}</div>
-    <div :id="index" :class="show_class" v-for="(item,index) in customer_list" v-bind:key="item.unify_name">
+    <div :id="index" :class="show_class" v-for="(item,index) in customer_list" v-bind:key="item.name">
       <el-row>
         <el-col :span="24" class="item">
           <div class="title">统一客户名称</div>
@@ -249,85 +249,86 @@ export default {
             self.NM_phone = '';
             self.C_manager = '';
             self.CM_phone = '';
-            self.customer_list = [];
-            let index = 0;
-            for(let x in list){
-              let record = list[x];
-              if(self.customer_list[record.unify_name] == undefined){
-                record.mark_list = [];
-                if(record.mark.split(" ").length > 1){
-                  if(record.mark.split(" ")[0] == "SET" || record.mark.split(" ")[0] == "set"){
-                    record.mark_list[record.mark.split(" ")[1]] = 1;
-                  }
-                  if(record.mark.split(" ")[0] == "UNSET" || record.mark.split(" ")[0] == "unset"){
-                    record.mark_list[record.mark.split(" ")[1]] = -1;
-                  }
-                }
-                record.mark = '';
-                for(let mark in record.mark_list){
-                  if(record.mark_list[mark] > 0){
-                    record.mark = record.mark + mark + ' ';
-                  }
-                }
-                record.name_list = [];
-                record.name_list[record.name] = record.name;
-                record.index = index;
-                self.customer_list[record.unify_name] = record;
-                // record.unify_name = record.unify_name.replace(new RegExp(self.name_input,'g'),'<font color="#409EFF">'+self.name_input+'</font>');
-                self.customer_list[index] = record;
-                index++;
-              }else{
-                let re_s = self.customer_list[record.unify_name];
-                if(re_s.level == "" && record.level != ""){
-                  self.level = record.level;
-                }
-                if(re_s.N_manager == "" && record.N_manager != ""){
-                  self.N_manager = record.N_manager;
-                }
-                if(re_s.NM_phone == "" && record.NM_phone != ""){
-                  self.NM_phone = record.NM_phone;
-                }
-                if(re_s.C_manager == "" && record.C_manager != ""){
-                  self.C_manager = record.C_manager;
-                }
-                if(re_s.CM_phone == "" && record.CM_phone != ""){
-                  self.CM_phone = record.CM_phone;
-                }
-                re_s.name_list[record.name] = record.name;
-                let name = '';
-                for(let n in re_s.name_list){
-                  if(re_s.name_list[n] != '' || re_s.name_list[n] != undefined){
-                    name = name + re_s.name_list[n] + '、';
-                  }
-                }
-                name = name.substr(0,name.length-1);
-                re_s.name = name;
-                if(record.mark.split(" ").length > 1){
-                  if(record.mark.split(" ")[0] == "SET" || record.mark.split(" ")[0] == "set"){
-                    if(re_s.mark_list[record.mark.split(" ")[1]] == undefined){
-                      re_s.mark_list[record.mark.split(" ")[1]] = 1;
-                    }else{
-                      re_s.mark_list[record.mark.split(" ")[1]] = re_s.mark_list[record.mark.split(" ")[1]] + 1;
-                    }
-                  }
-                  if(record.mark.split(" ")[0] == "UNSET" || record.mark.split(" ")[0] == "unset"){
-                    if(re_s.mark_list[record.mark.split(" ")[1]] == undefined){
-                      re_s.mark_list[record.mark.split(" ")[1]] = -1;
-                    }else{
-                      re_s.mark_list[record.mark.split(" ")[1]] = re_s.mark_list[record.mark.split(" ")[1]] - 1;
-                    }
-                  }
-                }
-                re_s.mark = '';
-                for(let mark in re_s.mark_list){
-                  if(re_s.mark_list[mark] > 0){
-                    re_s.mark = re_s.mark + mark + ' ';
-                  }
-                }
-                self.customer_list[record.unify_name] = re_s;
-                self.customer_list[re_s.index] = re_s;
-              }
-            }
+            self.customer_list = list;
+            // self.customer_list = [];
+            // let index = 0;
+            // for(let x in list){
+            //   let record = list[x];
+            //   if(self.customer_list[record.unify_name] == undefined){
+            //     record.mark_list = [];
+            //     if(record.mark.split(" ").length > 1){
+            //       if(record.mark.split(" ")[0] == "SET" || record.mark.split(" ")[0] == "set"){
+            //         record.mark_list[record.mark.split(" ")[1]] = 1;
+            //       }
+            //       if(record.mark.split(" ")[0] == "UNSET" || record.mark.split(" ")[0] == "unset"){
+            //         record.mark_list[record.mark.split(" ")[1]] = -1;
+            //       }
+            //     }
+            //     record.mark = '';
+            //     for(let mark in record.mark_list){
+            //       if(record.mark_list[mark] > 0){
+            //         record.mark = record.mark + mark + ' ';
+            //       }
+            //     }
+            //     record.name_list = [];
+            //     record.name_list[record.name] = record.name;
+            //     record.index = index;
+            //     self.customer_list[record.unify_name] = record;
+            //     // record.unify_name = record.unify_name.replace(new RegExp(self.name_input,'g'),'<font color="#409EFF">'+self.name_input+'</font>');
+            //     self.customer_list[index] = record;
+            //     index++;
+            //   }else{
+            //     let re_s = self.customer_list[record.unify_name];
+            //     if(re_s.level == "" && record.level != ""){
+            //       self.level = record.level;
+            //     }
+            //     if(re_s.N_manager == "" && record.N_manager != ""){
+            //       self.N_manager = record.N_manager;
+            //     }
+            //     if(re_s.NM_phone == "" && record.NM_phone != ""){
+            //       self.NM_phone = record.NM_phone;
+            //     }
+            //     if(re_s.C_manager == "" && record.C_manager != ""){
+            //       self.C_manager = record.C_manager;
+            //     }
+            //     if(re_s.CM_phone == "" && record.CM_phone != ""){
+            //       self.CM_phone = record.CM_phone;
+            //     }
+            //     re_s.name_list[record.name] = record.name;
+            //     let name = '';
+            //     for(let n in re_s.name_list){
+            //       if(re_s.name_list[n] != '' || re_s.name_list[n] != undefined){
+            //         name = name + re_s.name_list[n] + '、';
+            //       }
+            //     }
+            //     name = name.substr(0,name.length-1);
+            //     re_s.name = name;
+            //     if(record.mark.split(" ").length > 1){
+            //       if(record.mark.split(" ")[0] == "SET" || record.mark.split(" ")[0] == "set"){
+            //         if(re_s.mark_list[record.mark.split(" ")[1]] == undefined){
+            //           re_s.mark_list[record.mark.split(" ")[1]] = 1;
+            //         }else{
+            //           re_s.mark_list[record.mark.split(" ")[1]] = re_s.mark_list[record.mark.split(" ")[1]] + 1;
+            //         }
+            //       }
+            //       if(record.mark.split(" ")[0] == "UNSET" || record.mark.split(" ")[0] == "unset"){
+            //         if(re_s.mark_list[record.mark.split(" ")[1]] == undefined){
+            //           re_s.mark_list[record.mark.split(" ")[1]] = -1;
+            //         }else{
+            //           re_s.mark_list[record.mark.split(" ")[1]] = re_s.mark_list[record.mark.split(" ")[1]] - 1;
+            //         }
+            //       }
+            //     }
+            //     re_s.mark = '';
+            //     for(let mark in re_s.mark_list){
+            //       if(re_s.mark_list[mark] > 0){
+            //         re_s.mark = re_s.mark + mark + ' ';
+            //       }
+            //     }
+            //     self.customer_list[record.unify_name] = re_s;
+            //     self.customer_list[re_s.index] = re_s;
+            //   }
+            // }
           }else{
             alert(res.data.errMsg);
           }
