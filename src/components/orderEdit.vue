@@ -837,6 +837,7 @@ export default {
     reportResult:function(){
       let result = "【广州客户(" + this.order.name + ")故障" + this.share_type+"通报】\r\n" +
       "电路编号：" + this.order.circuit_number + "\r\n" +
+      "故障描述：" + this.order.trouble_symptom + "\r\n" +
       "发生时间：" + this.order.start_time+"\r\n" +
       "故障要求处理时限：" + this.order.time_limit + "\r\n" +
       "故障处理过程:\r\n";

@@ -149,8 +149,8 @@
         style="width: 100%"
         @size-change="sizeChange"
         @current-change="pageChange"
-        :current-page="index"
-        :page-size="limit"
+        :current-page.sync="index"
+        :page-size.sync="limit"
         :page-sizes="[10,20,50,100]"
         :total="sum"
         layout="sizes,->,prev,pager,next">
@@ -174,6 +174,7 @@ export default {
         this.start_time = '';
         this.end_time = '';
         this.number = '';
+        this.index = 1;
         if(!this.first_run){
           this.getData();
         }
@@ -192,7 +193,7 @@ export default {
       number:'',
       step:[],
       index:1,
-      limit:10,
+      limit:20,
       sum:0,
       rawData:[],
       show_search:false,
@@ -368,9 +369,9 @@ export default {
       }
     },
     sizeChange:function(val){
-      if(this.limit == val){
-        return;
-      }
+      // if(this.limit == val){
+      //   return;
+      // }
       this.limit = val;
       this.isLoading = true;
       let self = this;
@@ -379,9 +380,9 @@ export default {
       })
     },
     pageChange:function(val){
-      if(this.index == val){
-        return;
-      }
+      // if(this.index == val){
+      //   return;
+      // }
       let self = this;
       this.index = val;
       this.isLoading = true;
