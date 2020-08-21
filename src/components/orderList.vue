@@ -98,7 +98,7 @@
         stripe
         size="small"
         :header-cell-style="{background:'#409EFF',color:'white',textAlign:'center'}"
-        :cell-style="{textAlign:'center'}"
+        :cell-style="cellStyle"
         max-height="730px"
         style="width:100%;height: fit-content;margin-top: 24px">
         <el-table-column
@@ -128,9 +128,19 @@
           width="170px">
         </el-table-column>
         <el-table-column
+          prop="net_duration"
+          label="净历时"
+          width="80px">
+        </el-table-column>
+        <el-table-column
+          prop="time_limit"
+          label="时限"
+          width="50px">
+        </el-table-column>
+        <el-table-column
           prop="step"
           label="工单状态"
-          width="100px">
+          width="80px">
         </el-table-column>
         <el-table-column
           label="操作"
@@ -263,7 +273,7 @@ export default {
       data.append('index',(this.index-1)*this.limit);
       data.append('limit',this.limit);
       this.axios
-        .post('http://' + self.$global_msg.HOST + 'scripts/order/getList.php', data)
+        .post('http://' + self.$global_msg.HOST + 'scripts/order/getListWithTime.php', data)
         .then(function(res) {
           if(res.data.status == 'success'){
             self.rawData = res.data.result;
@@ -366,6 +376,21 @@ export default {
             self.$message.error('撤单失败:'+e)
           })
         })
+      }
+    },
+    cellStyle:function({row,rowIndex,columnIndex}){
+      if(columnIndex == 6){
+        let style = {textAlign:'center'};
+        if(Number(row.net_duration) > Number(row.time_limit)){
+          style.color = '#FF00FF';
+        }else{
+          let r = (Number(row.net_duration) / Number(row.time_limit) * 255).toFixed(0);
+          let g = 255 - r;
+          style.color = 'rgb('+r+','+g+',0)';
+        }
+        return style;
+      }else{
+        return {textAlign:'center'}
       }
     },
     sizeChange:function(val){

@@ -83,7 +83,7 @@
           <el-checkbox-group v-model="step">
             <el-checkbox label="结单"></el-checkbox>
             <el-checkbox label="未结单"></el-checkbox>
-            <el-checkbox label="挂起"></el-checkbox>
+            <el-checkbox label="挂起中"></el-checkbox>
             <el-checkbox label="已撤销"></el-checkbox>
           </el-checkbox-group>
         </div>
@@ -126,8 +126,8 @@ export default {
   methods:{
     submit:function(){
       let self = this;
-      if(this.start_time == '' && this.end_time == ''){
-        this.$message.warning('请至少选择一个时间！')
+      if(!this.orderID && !this.start_time && !this.end_time && !this.number & !this.name){
+        this.$message.warning('请至少输入一个限制条件！')
         return;
       }else{
         this.loading = true;

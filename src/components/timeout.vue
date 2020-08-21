@@ -22,7 +22,7 @@
           <vxe-button status="primary" icon="vxe-icon--d-arrow-right" id="btn_list" @click="toList">考核工单详情</vxe-button>
           <!-- <vxe-button id="btn_add" status="primary" icon="vxe-icon--plus" @click="isAdd = !isAdd">添加澄清</vxe-button> -->
           <!-- <vxe-modal v-model="isAdd" :lock-scroll="false" show-footer width="50%" @confirm="parseInt(reduce[0].time) > parseInt(reduce[0].maxTime)?:addReduce"> -->
-          <vxe-modal title="添加澄清" v-model="isAdd" :lock-scroll="false" show-footer width="50%" @confirm="addReduce">
+          <vxe-modal title="添加澄清" v-model="isAdd" :lock-scroll="false" show-footer width="70%" @confirm="addReduce">
           <vxe-table
           show-overflow
           height="fit-content"
@@ -31,9 +31,11 @@
           border
           :data="reduce"
           :edit-config="{trigger: 'click', mode: 'cell', activeMethod: not_edit_id}">
-          <vxe-table-column field="id" title="故障单编号" width="50%" :edit-render="{name: 'input'}"></vxe-table-column>
-          <vxe-table-column field="province" title="澄清归属" width="30%" :edit-render="{name: 'input', attrs: {type: 'text'}}"></vxe-table-column>
-          <vxe-table-column field="time" title="澄清历时" width="20%" :edit-render="{name: '$input', props: {type: 'number'}}"></vxe-table-column>
+            <vxe-table-column field="id" title="故障单编号" width="40%" :edit-render="{name: 'input'}"></vxe-table-column>
+            <vxe-table-column field="province" title="澄清归属" width="10%" :edit-render="{name: 'input', attrs: {type: 'text'}}"></vxe-table-column>
+            <vxe-table-column field="time" title="澄清历时" width="10%" :edit-render="{name: '$input', props: {type: 'number'}}"></vxe-table-column>
+            <vxe-table-column field="timeLimit" title="更改时限" width="10%" :edit-render="{name: '$input', props: {type: 'number'}}"></vxe-table-column>
+            <vxe-table-column field="mark" title="更改标记" width="30%" :edit-render="{name: '$input', props: {type: 'text'}}"></vxe-table-column>
           </vxe-table>
           </vxe-modal>
         </div>
@@ -310,7 +312,8 @@ export default {
         province: '',
         time: 0,
         maxTime: 0,
-        timeLimit: 0
+        timeLimit: 0,
+        mark:''
       }];
     },
     cell_class: function({
@@ -347,6 +350,29 @@ export default {
         return;
       }
 
+      let TOP33 = 0;
+      let TOP210 = 0;
+      let TOP800 = 0;
+      let TOPN = 0;
+      let assess_TOPN = 0;
+
+      let marks = this.reduce[0].mark.split(' ');
+      for(let i in marks){
+        switch(marks[i]){
+          case "TOP210":
+            TOP210 = 1;
+            break;
+          case "TOP33":
+            TOP33 = 1; 
+            //TOP33必然是TOP800，自动设置
+          case "TOP800":
+            TOP800 = 1;
+            break;
+        }
+      }
+      TOPN = TOP33||TOP800||TOP210?1:0;
+      assess_TOPN = TOP33||TOP800?1:0;
+
       let self = this;
       let data = new FormData();
       data.append('id', this.reduce[0].id);
@@ -354,6 +380,11 @@ export default {
       data.append('time', this.reduce[0].maxTime);
       data.append('reduce_time', this.reduce[0].time);
       data.append('time_limit', this.reduce[0].timeLimit);
+      data.append('TOP33',TOP33);
+      data.append('TOP210',TOP210);
+      data.append('TOP800',TOP800);
+      data.append('TOPN',TOPN);
+      data.append('assess_TOPN',assess_TOPN);
       data.append('token',this.token);
       this.axios
         .post('http://' + self.$global_msg.HOST + 'scripts/assess_order/add_reduce.php', data)
@@ -375,6 +406,12 @@ export default {
                   } else {
                     data.time_out = '1';
                   }
+                  data.time_limit = self.reduce[0].timeLimit;
+                  data.TOP33 = TOP33;
+                  data.TOP210 = TOP210;
+                  data.TOP800 = TOP800;
+                  data.TOPN = TOPN;
+                  data.assess_TOPN = assess_TOPN;
                   self.rawData[i] = data;
                   break;
                 }
@@ -400,6 +437,7 @@ export default {
       this.reduce[0].id = e.row.id;
       this.reduce[0].maxTime = e.row.time;
       this.reduce[0].timeLimit = e.row.timeLimit;
+      this.reduce[0].mark = e.row.mark;
       this.isAdd = !this.isAdd;
     },
     not_edit_id({

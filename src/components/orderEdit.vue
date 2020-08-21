@@ -85,7 +85,11 @@
           </el-col>
           <el-col :span="11">
             <div class="content">
-              <el-input v-model="order.net_duration" disabled></el-input>
+              <el-input v-model="order.net_duration" disabled :style="net_duration_style"></el-input>
+              <timeoutReminder
+               :rate="Number(this.order.net_duration) / Number(this.order.time_limit)"
+               style="position: absolute;right:-370px">
+              </timeoutReminder>
             </div>
           </el-col>
           <el-col :span="1"></el-col>
@@ -493,172 +497,12 @@
         </el-row>
       </div>
     </el-main>
-    <popButton
+    <notificationAssistant
       v-if="canDo.order_report"
-      type="primary"
-      icon="el-icon-share"
-      @click.native="showShare"
-      text='通报助手'
-      style="position: absolute;right: 36px;bottom: 36px;z-index: 100">
-    </popButton>
-    <el-dialog
-      title="通报助手"
-      :visible.sync="sharing"
-      width="80%"
-      center>
-
-      <el-row>
-        <el-col :span="1"></el-col>
-        <el-col :span="11"><div class="label">通报类型</div></el-col>
-        <el-col :span="11"><div class="label">电路编号</div></el-col>
-        <el-col :span="1"></el-col>
-      </el-row>
-      <el-row>
-        <el-col :span="1"></el-col>
-        <el-col :span="11">
-          <div class="content">
-            <el-select v-model="share_type">
-              <el-option key="0" label="首次" value="首次"></el-option>
-              <el-option key="1" label="进展" value="进展"></el-option>
-              <el-option key="2" label="恢复" value="恢复"></el-option>
-            </el-select>
-          </div>
-        </el-col>
-        <el-col :span="11">
-          <div class="content">
-            <el-input v-model="order.circuit_number" disabled></el-input>
-          </div>
-        </el-col>
-        <el-col :span="1"></el-col>
-      </el-row>
-
-      <el-row>
-        <el-col :span="1"></el-col>
-        <el-col :span="11"><div class="label">故障描述</div></el-col>
-        <el-col :span="11"><div class="label">故障开始时间</div></el-col>
-        <el-col :span="1"></el-col>
-      </el-row>
-      <el-row>
-        <el-col :span="1"></el-col>
-        <el-col :span="11">
-          <div class="content">
-            <el-input v-model="order.trouble_symptom" disabled></el-input>
-          </div>
-        </el-col>
-        <el-col :span="11">
-          <div class="content">
-            <el-input v-model="order.start_time" disabled></el-input>
-          </div>
-        </el-col>
-        <el-col :span="1"></el-col>
-      </el-row>
-
-      <el-row>
-        <el-col :span="1"></el-col>
-        <el-col :span="11"><div class="label">处理时限</div></el-col>
-        <el-col :span="11"><div class="label">发展区域</div></el-col>
-        <el-col :span="1"></el-col>
-      </el-row>
-      <el-row>
-        <el-col :span="1"></el-col>
-        <el-col :span="11">
-          <div class="content">
-            <el-input v-model="order.time_limit" disabled></el-input>
-          </div>
-        </el-col>
-        <el-col :span="11">
-          <div class="content">
-            <el-input v-model="start_department"></el-input>
-          </div>
-        </el-col>
-        <el-col :span="1"></el-col>
-      </el-row>
-
-      <el-row>
-        <el-col :span="1"></el-col>
-        <el-col :span="11"><div class="label">客户经理</div></el-col>
-        <el-col :span="11"><div class="label">网络经理</div></el-col>
-        <el-col :span="1"></el-col>
-      </el-row>
-      <el-row>
-        <el-col :span="1"></el-col>
-        <el-col :span="11">
-          <div class="content">
-            <el-input v-model="C_manager"></el-input>
-          </div>
-        </el-col>
-        <el-col :span="11">
-          <div class="content">
-            <el-input v-model="N_manager"></el-input>
-          </div>
-        </el-col>
-        <el-col :span="1"></el-col>
-      </el-row>
-
-      <el-row>
-        <el-col :span="1"></el-col>
-        <el-col :span="11"><div class="label">客户联系人</div></el-col>
-        <el-col :span="11"><div class="label">客户联系电话</div></el-col>
-        <el-col :span="1"></el-col>
-      </el-row>
-      <el-row>
-        <el-col :span="1"></el-col>
-        <el-col :span="11">
-          <div class="content">
-            <el-input v-model="order.contact_name" disabled></el-input>
-          </div>
-        </el-col>
-        <el-col :span="11">
-          <div class="content">
-            <el-input v-model="order.contact_number" disabled></el-input>
-          </div>
-        </el-col>
-        <el-col :span="1"></el-col>
-      </el-row>
-
-      <el-row>
-        <el-col :span="1"></el-col>
-        <el-col :span="11"><div class="label">通报人</div></el-col>
-        <el-col :span="11"><div class="label">通报人电话</div></el-col>
-        <el-col :span="1"></el-col>
-      </el-row>
-      <el-row>
-        <el-col :span="1"></el-col>
-        <el-col :span="11">
-          <div class="content">
-            <el-input v-model="reporter"></el-input>
-          </div>
-        </el-col>
-        <el-col :span="11">
-          <div class="content">
-            <el-input v-model="reporter_number"></el-input>
-          </div>
-        </el-col>
-        <el-col :span="1"></el-col>
-      </el-row>
-
-      <el-row>
-        <el-col :span="1"></el-col>
-        <el-col :span="22"><div class="label">通报输出(双击复制)</div></el-col>
-        <el-col :span="1"></el-col>
-      </el-row>
-      <el-row>
-        <el-col :span="1"></el-col>
-        <el-col :span="22">
-          <div class="content textarea" @click = "shareClick">
-            <el-input 
-              type="textarea" 
-              :value = "reportResult" 
-              autosize
-              disabled
-            >
-            </el-input>
-          </div>
-        </el-col>
-        <el-col :span="1"></el-col>
-      </el-row>
-
-    </el-dialog>
+      :order="order"
+      :token="token"
+      :processList="processList">
+    </notificationAssistant>
   </el-container>
 </template>
 
@@ -677,12 +521,14 @@ function haveDateTime(str){
   }
 }
 
-import popButton from './popButton.vue'
+import notificationAssistant from './notificationAssistant'
+import timeoutReminder from './timeoutReminder'
 
 export default {
   name: 'OrderEdit',
   components:{
-    popButton:popButton
+    notificationAssistant:notificationAssistant,
+    timeoutReminder:timeoutReminder
   },
   data() {
     return {
@@ -799,19 +645,8 @@ export default {
       id:'',
       order:{},
       processList:[],
+      net_duration_style:'',
       timeCounter:undefined,
-      hover:false,
-      share_text:'',
-      hover_timer:undefined,
-      sharing:false,
-      share_type:'首次',
-      start_department:'',
-      N_manager:'',
-      C_manager:'',
-      reporter:'',
-      reporter_number:'',
-      result:'',
-      clickTimer:undefined
     }
   },
   created: function() {
@@ -834,35 +669,6 @@ export default {
     }
   },
   computed:{
-    reportResult:function(){
-      let result = "【广州客户(" + this.order.name + ")故障" + this.share_type+"通报】\r\n" +
-      "电路编号：" + this.order.circuit_number + "\r\n" +
-      "故障描述：" + this.order.trouble_symptom + "\r\n" +
-      "发生时间：" + this.order.start_time+"\r\n" +
-      "故障要求处理时限：" + this.order.time_limit + "\r\n" +
-      "故障处理过程:\r\n";
-      for(let i in this.processList){
-        result = result + this.processList[i].time + ' ' + this.processList[i].description + '\r\n';
-      }
-      result = result +
-      "发展区域：" + this.start_department + '\r\n' +
-      "网络经理：" + this.N_manager + '\r\n' +
-      "客户联系方式：" + this.order.contact_name + ' ' + this.order.contact_number + '\r\n' +
-      "集响监控室发送人：" + this.reporter + ' ' + this.reporter_number + '\r\n' +
-      "集响监控联系电话：020-22993341\r\n" +
-      "本地";
-      if(this.order.mark){
-        result = result + ' ' + this.order.mark;
-      }
-      result = result + '/ ';
-      if(this.N_manager){
-        result = result + '@' + this.N_manager + ' ';
-      }
-      if(this.C_manager){
-        result = result + '@' + this.C_manager;
-      } 
-      return result;
-    }
   },
   methods: {
     getData: function() {
@@ -970,7 +776,7 @@ export default {
               self.$message.error('字符串分割错误！')
             } else {
               if (res.time.length < res.description.length) {
-                if (res.description[0] != "") {
+                if (res.description[0].trim() != "") {
                   self.processList[index].description = res.description[0].trim();
                   res.description.splice(0, 1);
                   index++;
@@ -1369,6 +1175,13 @@ export default {
       }else{
         this.order.time = '';
       }
+      if(Number(this.order.net_duration) > Number(this.order.time_limit)){
+        this.net_duration_style = "box-shadow:#FF00FF 0px 0px 10px";
+      }else{
+        let r = (Number(this.order.net_duration) / Number(this.order.time_limit) * 255).toFixed(0);
+        let g = 255 - r;
+        this.net_duration_style = 'box-shadow:rgb('+r+','+g+',0) 0px 0px 10px';
+      }
     },
     markFormatter:function(mark){
       switch(mark){
@@ -1379,56 +1192,6 @@ export default {
         case 'unset_suspend':  
           return '解挂';
       }
-    },
-    hoverIn:function(){
-      let self = this;
-      this.hover = true;
-      if(this.hover_timer){
-        clearTimeout(this.hover_timer);
-      }
-      this.hover_timer = setTimeout(function(){
-        self.share_text = '通报助手';
-        self.hover_timer = undefined;
-      },250)
-    },
-    hoverOut:function(){
-      this.hover = false;
-      this.share_text = '';
-      if(this.hover_timer){
-        clearTimeout(this.hover_timer)
-        this.hover_timer = undefined;
-      }
-    },
-    shareClick:function(){
-      let self = this;
-      if(this.clickTimer){
-        this.$copyText(this.reportResult).then(res => {
-            self.$message.success('已复制到剪切板！');
-          },
-          err => {
-            self.$message.error('复制失败，请手动复制！');
-            console.log(err);
-          }
-        );
-        clearTimeout(this.clickTimer)
-        this.clickTimer = undefined
-      }else{
-        this.clickTimer = setTimeout(function(){
-          self.clickTimer = undefined;
-        },500)
-      }
-    },
-    showShare:function(){
-      let self = this;
-      this.getCustomerList(function(res){
-        if(res.data.result.length > 0){
-          let data = res.data.result[0];
-          self.N_manager = data.N_manager;
-          self.C_manager = data.C_manager;
-          self.start_department = data.start_department;
-        }
-      })
-      this.sharing = true;
     },
     assess_query:async function(list){
       let self = this;
@@ -1515,16 +1278,5 @@ export default {
 }
 .content .el-select{
   width:100%;
-}
-#btn_share{
-  position: absolute;
-  right: 36px;
-  bottom: 36px;
-  width: 42px;
-  z-index: 100;
-  transition: all .5s;
-}
-#btn_share:hover{
-  width: 122px;
 }
 </style>
