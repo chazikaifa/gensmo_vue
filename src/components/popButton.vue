@@ -1,5 +1,7 @@
 <template>
   <el-button
+    id="btn"
+    ref="btn"
     class="pop_btn"
     :type="type" 
     :icon="icon"
@@ -8,7 +10,7 @@
     @mouseover.native="hoverIn"
     @mouseleave.native="hoverOut"
     >
-    {{show_text}}
+    {{text}}
   </el-button>
 </template>
 
@@ -20,40 +22,77 @@ export default {
   data() {
     return {
       hover:false,
-      show_text:'',
-      hover_timer:undefined
+      hover_in_timer:undefined,
+      hover_out_timer:undefined,
+      width:"60px",
+      span:undefined
     }
   },
   created: function() {
-    
+    this.width = (this.text.length * 15); 
+  },
+  mounted:function(){
+    let btn = this.$refs.btn;
+    this.span = btn.$vnode.elm.children[1];
   },
   methods: {
     hoverIn:function(){
       let self = this;
-      this.hover = true;
-      if(this.hover_timer){
-        clearTimeout(this.hover_timer);
+      if(this.hover_in_timer){
+        clearTimeout(this.hover_in_timer);
       }
-      this.hover_timer = setTimeout(function(){
-        self.show_text = self.text;
-        self.hover_timer = undefined;
-      },250)
+      if(this.hover_out_timer){
+        clearTimeout(this.hover_out_timer);
+        this.hover_out_timer = undefined;
+      }
+      self.hover = true;
+      self.setWidth(self.width)
+      this.hover_in_timer = setTimeout(function(){
+        self.hover_in_timer = undefined;
+      },100)
     },
     hoverOut:function(){
-      this.hover = false;
-      this.show_text = '';
-      if(this.hover_timer){
-        clearTimeout(this.hover_timer)
-        this.hover_timer = undefined;
+      let self = this;
+      this.setWidth(0);
+      if(this.hover_in_timer){
+        clearTimeout(this.hover_in_timer)
+        this.hover_in_timer = undefined;
       }
+      if(this.hover_out_timer){
+        clearTimeout(this.hover_in_timer);
+      }
+
+      this.hover_out_timer = setTimeout(function(){
+        self.hover = false;
+        self.hover_out_timer = undefined;
+      },250)
     },
+    setWidth:function(width){
+      if(!this.span){
+        return;
+      }
+      this.span.setAttribute('style',"width:"+width+"px;");
+    }
   }
 }
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
-.pop_btn{
-  transition: all .5s
+#btn{
+  transition: all .5s;
+  overflow: hidden;
+}
+#btn >>> span{
+  display: inline-block;
+  margin-left: 1px;
+  width: 0;
+  transition: all .5s;
+  opacity:0;
+}
+
+#btn:hover >>> span{
+  margin-left: 5px;
+  opacity:1;
 }
 </style>

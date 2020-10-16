@@ -1267,6 +1267,9 @@ export default {
   position: absolute;
   bottom: 10px;
 }
+.el-col:nth-last-child(2) >>> .content{
+  padding-right: 0px;
+}
 .content{
   padding-right: 24px;
   height: 36px;

@@ -31,7 +31,7 @@ export default {
   height: 100vh;
   width: 100vw;
   overflow-x: hidden;
-  overflow-y: scroll;
+  overflow-y: auto;
   /*background: #222933;*/
 }
 </style>

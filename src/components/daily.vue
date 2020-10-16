@@ -37,8 +37,8 @@
 </template>
 
 <script>
-var TOP33_sum = 61;
-var TOP33_time_sum = 6758.4667;
+var EXCEPT_NUMBER = ['','无','客户无法提供','-'];
+
 Date.prototype.Format = function(fmt) { //author: meizz   
   var o = {
     "M+": this.getMonth() + 1, //月份   
@@ -69,6 +69,8 @@ export default {
       canDo:{},
       doList:['getAssessOrder'],
       days: [],
+      TOP33_sum:0,
+      TOP33_time_sum:0,
       dailyData: [{
         item: '责任故障重复次数',
         target: 0,
@@ -281,15 +283,22 @@ export default {
     this.countDay();
     this.assess_query(this.doList).then(function(){
       if(self.canDo.getAssessOrder){
-        self.init();
+        let now = new Date(self.dateNow);
+        now.setDate(now.getDate() - 1);
+        self.getTOP33Data(now.getMonth()).then(function(res){
+          console.log(res)
+          self.TOP33_sum = res.TOP33_sum;
+          self.TOP33_time_sum = res.TOP33_time_sum;
+          self.init();
+        })
       }else{
-        self.$message.error('[sumLine]:没有接口权限！')
+        self.$message.error('[daily]:没有接口权限！')
       }
     })
   },
   updated: function() {},
   methods: {
-    //必须在渲染完成之前填充days数组，否则动态生成的列不能正常显示
+    //必须在渲染之前填充days数组，否则动态生成的列不能正常显示
     countDay:function(){
       let now = new Date(this.dateNow);
       this.now = now.Format("yyyy年MM月dd日");
@@ -349,6 +358,7 @@ export default {
       start.setHours(0);
       start.setMinutes(0);
       start.setSeconds(0);
+
       this.getData(start.Format('yyyy-MM-dd hh:mm:ss'), now.Format('yyyy-MM-dd hh:mm:ss'));
     },
     colspanMethod: function({
@@ -427,6 +437,33 @@ export default {
         colspan: 1
       };
     },
+    getTOP33Data:async function(month){
+      let result = {
+        TOP33_sum:0,
+        TOP33_time_sum:0
+      };
+      await this.axios
+        .get('http://' + this.$global_msg.HOST + 'scripts/report/reportData.php')
+        .then(function(res){
+          let d = res.data;
+          for(let i in d){
+            if(d[i].name == 'TOP55_list'){
+              for(let j = 0;j < month;j++){
+                result.TOP33_sum = result.TOP33_sum + d[i].data[j];
+              }
+            }
+            if(d[i].name == 'TOP55_time_list'){
+              for(let j = 0;j < month;j++){
+                result.TOP33_time_sum = result.TOP33_time_sum + d[i].data[j];
+              }
+            }
+          }
+        }).catch(function(e){
+          self.$message.error('[daily]:TOP33数据获取失败！错误：'+e);
+          console.log(e)
+        })
+      return result;
+    },
     getData: function(start, end) {
       let self = this;
       self.dataReady = false;
@@ -464,15 +501,15 @@ export default {
             self.judge(self.judgeTOP33, "sum", 1, function(data) {
               self.dailyData[1]['sum'] = data.sum;
               self.dailyData[1]['sumToTarget'] = self.dailyData[1]['sum'] - self.dailyData[1]['target'];
-              self.dailyData[1]['desc'] = '2020年累计责任故障' + (data.sum + TOP33_sum) + '次';
+              self.dailyData[1]['desc'] = '2020年累计责任故障' + (data.sum + self.TOP33_sum) + '次';
 
-              self.dailyData['TOP33_sum']['sum'] = data.sum + TOP33_sum;
+              self.dailyData['TOP33_sum']['sum'] = data.sum + self.TOP33_sum;
               self.dailyData['TOP33_sum']['sumToTarget'] = self.dailyData['TOP33_sum']['sum'] - self.dailyData['TOP33_sum']['target'];
             })
             self.judge(self.judgeTOP33, "time", 2, function(data) {
               self.dailyData[2]['sum'] = data.time;
               self.dailyData[2]['sumToTarget'] = self.dailyData[2]['sum'] - self.dailyData[2]['target'];
-              let timeSum = (TOP33_time_sum + data.timeSum) / (TOP33_sum + data.sum);
+              let timeSum = (self.TOP33_time_sum + data.timeSum) / (self.TOP33_sum + data.sum);
               self.dailyData[2]['desc'] = '2020年平均历时' + timeSum.toFixed(2) + '分钟';
 
               self.dailyData['TOP33_time']['sum'] = timeSum;
@@ -603,7 +640,7 @@ export default {
     judgeRepeat: function(data) {
       let circuit_arr = [];
       for (let i in data) {
-        if (data[i].circuit_number == "") {
+        if (EXCEPT_NUMBER.includes(data[i].circuit_number)) {
           continue;
         }
         if (circuit_arr[data[i].circuit_number] == undefined) {
@@ -623,8 +660,11 @@ export default {
           circuit_arr[data[i].circuit_number] = repeat;
         } else {
           circuit_arr[data[i].circuit_number].sum++;
-          if (circuit_arr[data[i].circuit_number].sum > 1) {
-            //console.log(data[i].circuit_number + 'repeat:' + circuit_arr[data[i].circuit_number].sum);
+          if ((circuit_arr[data[i].circuit_number].TOP800 || circuit_arr[data[i].circuit_number].TOP33) && circuit_arr[data[i].circuit_number].sum > 1 || circuit_arr[data[i].circuit_number].sum > 2) {
+            let log = data[i].circuit_number;
+            log = log + (circuit_arr[data[i].circuit_number].TOP800?'|TOP800':'') + (circuit_arr[data[i].circuit_number].TOP33?'|TOP33':'');
+            log = log + '|repeat:' + circuit_arr[data[i].circuit_number].sum
+            console.log(log);
           }
         }
       }

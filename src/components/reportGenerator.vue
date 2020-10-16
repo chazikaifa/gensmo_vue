@@ -50,8 +50,6 @@ const DEFAULT_COLORS = [
   '#997300', '#264478', '#43682B',
   '#7CAFDD'
 ];
-var TOP33_sum = 61;
-var TOP33_time_sum = 6758.4667;
 var TOP33_NUMBER_SUM = 3731;
 Date.prototype.Format = function(fmt)   
 { //author: meizz   
@@ -278,8 +276,10 @@ export default {
       let data = new FormData();
       data.append('START',all_start.Format('yyyy-MM-dd hh:mm:ss'));
       data.append('END',end.Format('yyyy-MM-dd hh:mm:ss'));
+      data.append('province','广东省广州市');
+      data.append('token',self.token);
       this.axios
-        .post('http://'+self.$global_msg.HOST+'scripts/assess_order/get_order_by_datetime.php',data)
+        .post('http://'+self.$global_msg.HOST+'scripts/assess_order/get_gz_order_by_datetime.php',data)
         .then(function(res){
           if(res.data.status == 'success'){
             self.rawData = res.data.result;
@@ -287,9 +287,9 @@ export default {
             self.assess_data = [];
             for(let i in self.rawData){
               let data = self.rawData[i];
-              if(data.responsible_province == '广州' || data.province == '广东省广州市' && data.responsible_province == '用户'){
+              if(data.responsible_province == '广州' || data.responsible_province == '用户'){
                 self.assess_data_all.push(data);
-                if(new Date(data.end_time) > start){
+                if(new Date(data.system_end_time) > start){
                   self.assess_data.push(data);
                 }
               }
@@ -574,6 +574,41 @@ export default {
             color:DEFAULT_COLORS
           };
         break;
+      case 'multi':
+        option = {
+          title: {
+            show: false
+          },
+          // grid:grid,
+          animation:false,
+          tooltip: {},
+          legend:legend,
+          xAxis: {
+            data: xAxis,
+            splitLine:{
+              show:false,
+            },
+            axisLabel:{
+              interval:0,
+              fontSize:10,
+            }
+          },
+          yAxis:[{
+            type:'value',
+            position:'left',
+            splitLine:{
+              show:false
+            }
+          },{
+            type:'value',
+            position:'right',
+            splitLine:{
+              show:false
+            }
+          }],
+          series: series,
+          color:DEFAULT_COLORS
+        };
       }
       return option;
     },
@@ -843,7 +878,7 @@ export default {
         let ad = obj.assess_data.data;
         let line = 0;
         for(let i in ad){
-          if(ad[i].trouble_type == '专线业务'){
+          if(ad[i].trouble_type == '专线业务' && ad[i].is_trouble == '1'){
             line++;
           }
         }
@@ -856,7 +891,7 @@ export default {
         let ad = obj.assess_data.data;
         let network = 0;
         for(let i in ad){
-          if(ad[i].trouble_type == '互联网业务'){
+          if(ad[i].trouble_type == '互联网业务' && ad[i].is_trouble == '1'){
             network++;
           }
         }
@@ -869,7 +904,7 @@ export default {
         let ad = obj.assess_data.data;
         let phone = 0;
         for(let i in ad){
-          if(ad[i].trouble_type == '语音业务'){
+          if(ad[i].trouble_type == '语音业务' && ad[i].is_trouble == '1'){
             phone++;
           }
         }
@@ -879,8 +914,7 @@ export default {
       }));
 
       this.itemList.push(new reportItem('order_assess_other','text','19其他业务故障',function(obj){
-        let ad = obj.assess_data.data;
-        return ad.length - obj.order_assess_line.data - obj.order_assess_network.data - obj.order_assess_phone.data;
+        return obj.order_assess_real.data - obj.order_assess_line.data - obj.order_assess_network.data - obj.order_assess_phone.data;
       },function(result){
         self.dataObject.add('order_assess_other','number',result);
       }));
@@ -913,7 +947,7 @@ export default {
         let result = "";
         for(let i in arr){
           if(arr[i].sum > 0){
-            result = result + arr[i].text + "故障" + arr[i].sum + "宗，占比" + (arr[i].sum / obj.assess_data.data.length * 100).toFixed(2) + "%；"
+            result = result + arr[i].text + "故障" + arr[i].sum + "宗，占比" + (arr[i].sum / obj.order_assess_real.data * 100).toFixed(2) + "%；"
           }
         }
         result = result.substr(0,result.length-1) + "。";
@@ -2583,7 +2617,7 @@ export default {
               trouble_reason:ad[i].trouble_reason,
               time:ad[i].time,
               is_trouble:ad[i].is_trouble,
-              is_assess:ad[i].responsible_province == '广州'?'1':'0',
+              is_assess:(ad[i].responsible_province == '广州' && ad[i].is_assess == '1')?'1':'0',
               timeout:ad[i].time_out
             })
           }
@@ -3310,6 +3344,117 @@ export default {
       this.itemList.push(new reportItem('all_assess_all_timeout_detail','text','所有客户累计责任及时率情况',function(obj){
         let percent = ((1 - obj.all_assess_all_timeout.data / obj.all_assess_all_sum.data) * 100).toFixed(2);
         return percent + '%' + (percent > 95 ? "(>95%)，达标" : "(<95%)，不达标");
+      }));
+
+      this.itemList.push(new reportItem('TOP55_sum','text','TOP55客户累计故障',function(obj){
+        let list = obj.TOP55_list.data;
+        let sum = 0;
+        for(let i = 0;i<obj.month.data-1;i++){
+          sum = sum + list[i];
+        }
+        let ad = obj.assess_data_all.data;
+        let new_55 = 0;
+        for(let i in ad){
+          if(ad[i].TOP33 == '1' && ad[i].is_assess == '1' && ad[i].responsible_province == '广州'){
+            new_55++;
+            console.log(ad[i].orderId);
+          }
+        }
+        self.dataObject.add('TOP55_new_sum','number',new_55);
+        return sum+new_55;
+      },function(result){
+        self.dataObject.add('TOP55_sum','number',result);
+      }));
+
+      this.itemList.push(new reportItem('TOP55_time','text','TOP55客户平均历时',function(obj){
+        let list = obj.TOP55_time_list.data;
+        let sum = 0;
+        for(let i = 0;i<obj.month.data-1;i++){
+          sum = sum + list[i];
+        }
+        let ad = obj.assess_data_all.data;
+        let new_55 = 0;
+        for(let i in ad){
+          if(ad[i].TOP33 == '1' && ad[i].is_assess == '1' && ad[i].responsible_province == '广州'){
+            new_55 = new_55 + Number(ad[i].assessment_time);
+          }
+        }
+        let new_time = (new_55/obj.TOP55_new_sum.data).toFixed(2);
+        self.dataObject.add('TOP55_new_time','number',new_time);
+        let time = ((sum+new_55)/obj.TOP55_sum.data).toFixed(2)
+        return time;
+      },function(result){
+        self.dataObject.add('TOP55_time','number',result);
+      }));
+
+      this.itemList.push(new reportItem('TOP55_detail','text','TOP55考核情况',function(obj){
+        if(obj.TOP55_time.data > 112){
+          return '不达标，客户原因与非广州故障已向省公司提交减免申请，待后续沟通确认';
+        }else{
+          return '达标';
+        }
+      }));
+
+      this.itemList.push(new reportItem('TOP55_picture','img','TOP55指标情况',async function(obj){
+        self.img_list.push({name:this.name,text:this.text})
+        let name = this.name;
+        let result = '';
+        let chart = '';
+        let now;
+        switch(obj.type.data){
+          case 'month':
+            now = obj.month.data+'月';
+            break;
+          case 'week':
+          default:
+            now = obj.month.data+'月(截止至'+obj.end.data.Format('dd日)');
+        }
+        let xAxis = [];
+        let sum_data = [];
+        let time_data = [];
+        for(let i = 0;i<obj.month.data-1;i++){
+          xAxis.push((i+1)+'月')
+          sum_data.push(obj.TOP55_list.data[i]);
+          time_data.push((obj.TOP55_time_list.data[i]/obj.TOP55_list.data[i]).toFixed(2));
+        }
+        xAxis.push(now);
+        sum_data.push(obj.TOP55_new_sum.data);
+        time_data.push(obj.TOP55_new_time.data);
+        let legend = {show:true,bottom:5};
+        let series = [{
+          name: 'TOP55故障量',
+          type: 'bar',
+          data: sum_data,
+          label:{
+            show:true
+          },
+          barMaxWidth:60
+        },{
+          name: '平均历时',
+          type: 'line',
+          data: time_data,
+          label:{
+            show:true
+          },
+          yAxisIndex:1,
+          markLine:{
+            data:[{
+              name:'目标历时',
+              yAxis:112
+            }],
+            symbol:['none','none'],
+            lineStyle:{
+              color:'#EA7777'
+            }
+          }
+        }];
+        let option = self.getOption('multi',series,xAxis,legend);
+        console.log(option)
+        await self.$nextTick(function(){
+          chart = self.getImg(name,option)
+        })
+
+        return chart;
       }));
     }
   }

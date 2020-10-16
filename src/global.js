@@ -1,4 +1,6 @@
 const HOST = '10.117.195.193/gensmo/';
+const TOP33_sum = 51;
+const TOP33_time_sum = 5738.0833;
 const THEME_LIST = [
 	"04BE02",
 	"40DEC9",
@@ -8,5 +10,7 @@ const THEME_LIST = [
 ];
 export default{
 	HOST,
-	THEME_LIST
+	THEME_LIST,
+	TOP33_sum,
+	TOP33_time_sum
 }
