@@ -188,73 +188,80 @@ export default {
         timeout: 0,
         rate: '100.0',
         time: 0,
-        timeSum: 0
+        timeSum: 0,
+        dutySum:0
       }];
       this.timeoutList = [];
       this.showList = [];
       for (let i in this.rawData) {
         let data = this.rawData[i]
-        if (data.province == '广东省广州市' && data.is_assess == 1) {
+        if (data.province == '广东省广州市') {
           let dutyFlag = data.responsible_province == '广州';
-          let timeoutFlag = data.time_out == '1' && dutyFlag;
-          let showFlag = timeoutFlag || Number(data.time) > Number(data.time_limit);
-          if (dutyFlag) {
-            timeCount[3].sum++;
-            timeCount[3].timeSum = timeCount[3].timeSum + Number(data.assessment_time);
-            timeCount[3].time = (timeCount[3].timeSum / timeCount[3].sum).toFixed(2);
-          }
-          if (timeoutFlag && dutyFlag) {
-            timeCount[3].timeout++;
-          }
-          timeCount[3].rate = Number((timeCount[3].sum - timeCount[3].timeout) / timeCount[3].sum * 100).toFixed(2) + '%';
-          if (data.assess_TOPN == '1' && dutyFlag) {
-            switch (data.level) {
-              case '一级':
-              case '二级':
-                timeCount[1].sum++;
-                timeCount[1].timeSum = timeCount[1].timeSum + Number(data.assessment_time);
-                timeCount[1].time = (timeCount[1].timeSum / timeCount[1].sum).toFixed(2);
-                if (timeoutFlag) {
-                  timeCount[1].timeout++;
-                }
-                timeCount[1].rate = Number((timeCount[1].sum - timeCount[1].timeout) / timeCount[1].sum * 100).toFixed(2) + '%';
-                break;
-              case '三级':
-              case '四级':
-              case '五级':
-              case '六级':
-                timeCount[2].sum++;
-                timeCount[2].timeSum = timeCount[2].timeSum + Number(data.assessment_time);
-                timeCount[2].time = (timeCount[2].timeSum / timeCount[2].sum).toFixed(2);
-                if (timeoutFlag) {
-                  timeCount[2].timeout++;
-                }
-                timeCount[2].rate = Number((timeCount[2].sum - timeCount[2].timeout) / timeCount[2].sum * 100).toFixed(2) + '%';
-                break;
+          let timeoutFlag = data.is_assess == '1' && data.time_out == '1' && dutyFlag;
+          let showFlag = data.is_assess == '1' && (timeoutFlag || Number(data.time) > Number(data.time_limit));
+          if(data.is_assess == '1'){
+            if (dutyFlag) {
+              timeCount[3].sum++;
+              timeCount[3].timeSum = timeCount[3].timeSum + Number(data.assessment_time);
+              timeCount[3].time = (timeCount[3].timeSum / timeCount[3].sum).toFixed(2);
             }
-          }
-          //因为TOP33采取预计澄清的模式通报，dutyFlag为假的时候也显示以作参考
-          if (data.TOP33 == '1') {
-            showFlag = true;
-            if(dutyFlag){
-              timeCount[0].sum++;
-              timeCount[0].timeSum = timeCount[0].timeSum + Number(data.assessment_time);
-              timeCount[0].time = (timeCount[0].timeSum / timeCount[0].sum).toFixed(2);
-              if (timeoutFlag) {
-                timeCount[0].timeout++;
+            if (timeoutFlag && dutyFlag) {
+              timeCount[3].timeout++;
+            }
+            timeCount[3].rate = Number((timeCount[3].sum - timeCount[3].timeout) / timeCount[3].sum * 100).toFixed(2) + '%';
+            if (data.assess_TOPN == '1' && dutyFlag) {
+              switch (data.level) {
+                case '一级':
+                case '二级':
+                  timeCount[1].sum++;
+                  timeCount[1].timeSum = timeCount[1].timeSum + Number(data.assessment_time);
+                  timeCount[1].time = (timeCount[1].timeSum / timeCount[1].sum).toFixed(2);
+                  if (timeoutFlag) {
+                    timeCount[1].timeout++;
+                  }
+                  timeCount[1].rate = Number((timeCount[1].sum - timeCount[1].timeout) / timeCount[1].sum * 100).toFixed(2) + '%';
+                  break;
+                case '三级':
+                case '四级':
+                case '五级':
+                case '六级':
+                  timeCount[2].sum++;
+                  timeCount[2].timeSum = timeCount[2].timeSum + Number(data.assessment_time);
+                  timeCount[2].time = (timeCount[2].timeSum / timeCount[2].sum).toFixed(2);
+                  if (timeoutFlag) {
+                    timeCount[2].timeout++;
+                  }
+                  timeCount[2].rate = Number((timeCount[2].sum - timeCount[2].timeout) / timeCount[2].sum * 100).toFixed(2) + '%';
+                  break;
               }
-              timeCount[0].rate = Number((timeCount[0].sum - timeCount[0].timeout) / timeCount[0].sum * 100).toFixed(2) + '%';
+            }
+            //因为TOP33采取预计澄清的模式通报，dutyFlag为假的时候也显示以作参考
+            if (data.TOP33 == '1') {
+              showFlag = true;
+              if(dutyFlag){
+                timeCount[0].sum++;
+                timeCount[0].timeSum = timeCount[0].timeSum + Number(data.assessment_time);
+                timeCount[0].time = (timeCount[0].timeSum / timeCount[0].sum).toFixed(2);
+                if (timeoutFlag) {
+                  timeCount[0].timeout++;
+                }
+                timeCount[0].rate = Number((timeCount[0].sum - timeCount[0].timeout) / timeCount[0].sum * 100).toFixed(2) + '%';
+              }
             }
           }
-
-          //TOP210计算的是净历时，需在最后计算
-          if (data.TOP210 == '1' && dutyFlag) {
-            showFlag = true;
-            timeoutFlag = timeoutFlag || Number(data.net_duration) > 120;
-            timeCount[4].sum++;
-            timeCount[4].timeSum = timeCount[4].timeSum + Number(data.net_duration);
-            timeCount[4].time = (timeCount[4].timeSum / timeCount[4].sum).toFixed(2);
-            if (Number(data.net_duration) > 120) {
+          //TOP210计算的是净历时，且总数包含非责任故障，需在最后计算
+          if (data.TOP210 == '1') {
+            showFlag = data.is_assess == '1';
+            timeoutFlag = timeoutFlag || (Number(data.net_duration) > 120 && dutyFlag && data.is_assess == '1');
+            if(dutyFlag){
+              timeCount[4].sum++;
+            }
+            if(dutyFlag && data.is_assess == '1'){
+              timeCount[4].dutySum++;
+              timeCount[4].timeSum = timeCount[4].timeSum + Number(data.net_duration);
+            }
+            timeCount[4].time = (timeCount[4].timeSum / timeCount[4].dutySum).toFixed(2);
+            if (Number(data.net_duration) > 120 && dutyFlag && data.is_assess == '1') {
               timeCount[4].timeout++;
             }
             timeCount[4].rate = Number((timeCount[4].sum - timeCount[4].timeout) / timeCount[4].sum * 100).toFixed(2) + '%';

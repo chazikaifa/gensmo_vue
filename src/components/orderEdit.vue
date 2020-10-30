@@ -284,7 +284,7 @@
             </div>
           </el-col>
           <transition name="el-fade-in">
-            <el-col :span="11" v-if="order.is_trouble == '1'">
+            <el-col :span="11" v-show="order.is_trouble == '1'">
               <div class="content">
                 <el-select v-model="order.is_customer" :clearable="true" @change="troubleClassChange" placeholder="请选择" :disabled="!edit">
                   <el-option key="1" label="是" value="1"></el-option>

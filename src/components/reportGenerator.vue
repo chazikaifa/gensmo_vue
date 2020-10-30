@@ -2834,7 +2834,11 @@ export default {
       }));
 
       this.itemList.push(new reportItem('TOP33_timeout_rate','text','TOP33及时率',function(obj){
-        return ((1 - obj.TOP33_timeout.data / obj.TOP33_sum.data) * 100).toFixed(2);
+        if(obj.TOP33_sum.data > 0){
+          return ((1 - obj.TOP33_timeout.data / obj.TOP33_sum.data) * 100).toFixed(2);
+        }else{
+          return '100.0'
+        }
       }));
 
       this.itemList.push(new reportItem('TOP33_assess_sum','text','TOP33责任故障',function(obj){
@@ -3027,7 +3031,7 @@ export default {
         let sum = 0;
         let arr = [];
         for(let i in ad){
-          if(ad[i].TOP210 == '1' && ad[i].is_assess == '1'){
+          if(ad[i].TOP210 == '1'){
             sum++;
             arr.push(ad[i]);
           }
@@ -3043,7 +3047,7 @@ export default {
         let arr = [];
         let sum = 0;
         for(let i in list){
-          if(list[i].net_duration > 120){
+          if(list[i].net_duration > 120 && list[i].is_assess == '1'){
             sum++;
             arr.push({
               TOP210TimeoutItem:list[i].orderId,
@@ -3065,8 +3069,13 @@ export default {
       }));
 
       this.itemList.push(new reportItem('TOP210_assess_timeout_detail','text','TOP210责任及时率情况',function(obj){
-        let percent = ((1 - obj.TOP210_assess_timeout.data / obj.TOP210_assess_sum.data) * 100).toFixed(2);
-        return percent + '%' + (percent > 90 ? "(>90%)，达标" : "(<90%)，不达标");
+        let percent;
+        if(obj.TOP210_assess_sum.data > 0){
+          percent = ((1 - obj.TOP210_assess_timeout.data / obj.TOP210_assess_sum.data) * 100).toFixed(2);
+        }else{
+          percent = 100;
+        }
+        return percent + '%' + (percent > 98 ? "(>98%)，达标" : "(<98%)，不达标，非广州故障与客户原因已向省公司提交减免申请，待后续沟通确认");
       }));
 
       this.itemList.push(new reportItem('TOP210_assess_all_sum','text','TOP210累计责任故障',function(obj){
@@ -3074,7 +3083,7 @@ export default {
         let sum = 0;
         let arr = [];
         for(let i in ad){
-          if(ad[i].TOP210 == '1' && ad[i].is_assess == '1'){
+          if(ad[i].TOP210 == '1'){
             sum++;
             arr.push(ad[i]);
           }
@@ -3089,7 +3098,7 @@ export default {
         let list = obj.TOP210_assess_all_list.data;
         let sum = 0;
         for(let i in list){
-          if(list[i].net_duration > 120){
+          if(list[i].net_duration > 120 && list[i].is_assess == '1'){
             sum++;
           }
         }
@@ -3099,8 +3108,13 @@ export default {
       }));
 
       this.itemList.push(new reportItem('TOP210_assess_all_timeout_detail','text','TOP210累计责任及时率情况',function(obj){
-        let percent = ((1 - obj.TOP210_assess_all_timeout.data / obj.TOP210_assess_all_sum.data) * 100).toFixed(2);
-        return percent + '%' + (percent > 98 ? "(>98%)，达标" : "(<98%)，不达标");
+        let percent;
+        if(obj.TOP210_assess_all_sum.data > 0){
+          percent = ((1 - obj.TOP210_assess_all_timeout.data / obj.TOP210_assess_all_sum.data) * 100).toFixed(2);
+        }else{
+          percent = 100;
+        }
+        return percent + '%' + (percent > 98 ? "(>98%)，达标" : "(<98%)，不达标，非广州故障与客户原因已向省公司提交减免申请，待后续沟通确认");
       }));
 
       this.itemList.push(new reportItem('TOP800_1_2_assess_sum','text','TOP800家1-2级责任故障',function(obj){
@@ -3146,8 +3160,13 @@ export default {
       }));
 
       this.itemList.push(new reportItem('TOP800_1_2_assess_timeout_detail','text','TOP800家1-2级责任及时率情况',function(obj){
-        let percent = ((1 - obj.TOP800_1_2_assess_timeout.data / obj.TOP800_1_2_assess_sum.data) * 100).toFixed(2);
-        return percent + '%' + (percent > 90 ? "(>90%)，达标" : "(<90%)，不达标");
+        let percent;
+        if(obj.TOP800_1_2_assess_sum.data > 0){
+          percent = ((1 - obj.TOP800_1_2_assess_timeout.data / obj.TOP800_1_2_assess_sum.data) * 100).toFixed(2);
+        }else{
+          percent = 100;
+        }
+        return percent + '%' + (percent > 90 ? "(>90%)，达标" : "(<90%)，不达标，非广州故障与客户原因已向省公司提交减免申请，待后续沟通确认");
       }));
 
       this.itemList.push(new reportItem('TOP800_1_2_assess_all_sum','text','TOP800家累计1-2级责任故障',function(obj){
@@ -3180,8 +3199,13 @@ export default {
       }));
 
       this.itemList.push(new reportItem('TOP800_1_2_assess_all_timeout_detail','text','TOP800家累计1-2级责任及时率情况',function(obj){
-        let percent = ((1 - obj.TOP800_1_2_assess_all_timeout.data / obj.TOP800_1_2_assess_all_sum.data) * 100).toFixed(2);
-        return percent + '%' + (percent > 95 ? "(>95%)，达标" : "(<95%)，不达标");
+        let percent;
+        if(obj.TOP800_1_2_assess_all_sum.data > 0){
+          percent = ((1 - obj.TOP800_1_2_assess_all_timeout.data / obj.TOP800_1_2_assess_all_sum.data) * 100).toFixed(2);
+        }else{
+          percent = 100;
+        }
+        return percent + '%' + (percent > 90 ? "(>90%)，达标" : "(<90%)，不达标，非广州故障与客户原因已向省公司提交减免申请，待后续沟通确认");
       }));
 
       this.itemList.push(new reportItem('TOP800_3_6_assess_sum','text','TOP800家3-6级责任故障',function(obj){
@@ -3227,8 +3251,13 @@ export default {
       }));
 
       this.itemList.push(new reportItem('TOP800_3_6_assess_timeout_detail','text','TOP800家3-6级责任及时率情况',function(obj){
-        let percent = ((1 - obj.TOP800_3_6_assess_timeout.data / obj.TOP800_3_6_assess_sum.data) * 100).toFixed(2);
-        return percent + '%' + (percent > 95 ? "(>95%)，达标" : "(<95%)，不达标");
+        let percent;
+        if(obj.TOP800_3_6_assess_sum.data > 0){
+          percent = ((1 - obj.TOP800_3_6_assess_timeout.data / obj.TOP800_3_6_assess_sum.data) * 100).toFixed(2);
+        }else{
+          percent = 100;
+        }
+        return percent + '%' + (percent > 95 ? "(>95%)，达标" : "(<95%)，不达标，非广州故障与客户原因已向省公司提交减免申请，待后续沟通确认");
       }));
 
       this.itemList.push(new reportItem('TOP800_3_6_assess_all_sum','text','TOP800家累计3-6级责任故障',function(obj){
@@ -3261,8 +3290,13 @@ export default {
       }));
 
       this.itemList.push(new reportItem('TOP800_3_6_assess_all_timeout_detail','text','TOP800家累计3-6级责任及时率情况',function(obj){
-        let percent = ((1 - obj.TOP800_3_6_assess_all_timeout.data / obj.TOP800_3_6_assess_all_sum.data) * 100).toFixed(2);
-        return percent + '%' + (percent > 95 ? "(>95%)，达标" : "(<95%)，不达标");
+        let percent;
+        if(obj.TOP800_3_6_assess_all_sum.data > 0){
+          percent = ((1 - obj.TOP800_3_6_assess_all_timeout.data / obj.TOP800_3_6_assess_all_sum.data) * 100).toFixed(2);
+        }else{
+          percent = 100;
+        }
+        return percent + '%' + (percent > 95 ? "(>95%)，达标" : "(<95%)，不达标，非广州故障与客户原因已向省公司提交减免申请，待后续沟通确认");
       }));
 
       this.itemList.push(new reportItem('all_assess_sum','text','所有客户责任故障',function(obj){
@@ -3308,8 +3342,13 @@ export default {
       }));
 
       this.itemList.push(new reportItem('all_assess_timeout_detail','text','所有客户责任及时率情况',function(obj){
-        let percent = ((1 - obj.all_assess_timeout.data / obj.all_assess_sum.data) * 100).toFixed(2);
-        return percent + '%' + (percent > 95 ? "(>95%)，达标" : "(<95%)，不达标");
+        let percent;
+        if(obj.all_assess_sum.data > 0){
+          percent = ((1 - obj.all_assess_timeout.data / obj.all_assess_sum.data) * 100).toFixed(2);
+        }else{
+          percent = 100;
+        }
+        return percent + '%' + (percent > 95 ? "(>95%)，达标" : "(<95%)，不达标，非广州故障与客户原因已向省公司提交减免申请，待后续沟通确认");
       }));
 
       this.itemList.push(new reportItem('all_assess_all_sum','text','所有客户累计责任故障',function(obj){
@@ -3342,8 +3381,13 @@ export default {
       }));
 
       this.itemList.push(new reportItem('all_assess_all_timeout_detail','text','所有客户累计责任及时率情况',function(obj){
-        let percent = ((1 - obj.all_assess_all_timeout.data / obj.all_assess_all_sum.data) * 100).toFixed(2);
-        return percent + '%' + (percent > 95 ? "(>95%)，达标" : "(<95%)，不达标");
+        let percent;
+        if(obj.all_assess_all_sum.data > 0){
+          percent = ((1 - obj.all_assess_all_timeout.data / obj.all_assess_all_sum.data) * 100).toFixed(2);
+        }else{
+          percent = 100;
+        }
+        return percent + '%' + (percent > 95 ? "(>95%)，达标" : "(<95%)，不达标，非广州故障与客户原因已向省公司提交减免申请，待后续沟通确认");
       }));
 
       this.itemList.push(new reportItem('TOP55_sum','text','TOP55客户累计故障',function(obj){

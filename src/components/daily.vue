@@ -224,6 +224,7 @@ export default {
       rawData: [],
       dataReady: false,
       assessData: [],
+      assessDataAll:[],
       dateNow:new Date(),
       now: "",
       dailyDesc: "",
@@ -330,6 +331,10 @@ export default {
         let limit = new Date(dateLimit);
         limit.setDate(minDay + i);
         this.assessData.push({
+          dateLimit: limit,
+          data: []
+        });
+        this.assessDataAll.push({
           dateLimit: limit,
           data: []
         });
@@ -480,13 +485,27 @@ export default {
 
             for (let i in self.rawData) {
               let data = self.rawData[i];
-              if (data.responsible_province != '广州' || data.is_assess == 0) {
+              if(data.responsible_province != '广州'){
                 continue;
               }
-              let end_time = new Date(data.end_time);
+              if (data.is_assess == 0 ) {
+                let system_end_time = new Date(data.system_end_time);
+                for (let n in self.assessDataAll) {
+                  if (self.assessDataAll[n].dateLimit - system_end_time > 0) {
+                    self.assessDataAll[n].data.push(data);
+                  }
+                }
+                continue;
+              }
+              let system_end_time = new Date(data.system_end_time);
               for (let n in self.assessData) {
-                if (self.assessData[n].dateLimit - end_time > 0) {
+                if (self.assessData[n].dateLimit - system_end_time > 0) {
                   self.assessData[n].data.push(data);
+                }
+              }
+              for (let n in self.assessDataAll) {
+                if (self.assessDataAll[n].dateLimit - system_end_time > 0) {
+                  self.assessDataAll[n].data.push(data);
                 }
               }
             }
@@ -524,19 +543,19 @@ export default {
                 self.dailyData[3]['sum'] = 1;
               }
               self.dailyData[3]['sumToTarget'] = self.dailyData[3]['sum'] - self.dailyData[3]['target'];
-            })
+            },true)
             self.judge(self.judgeTOP210, "sj", 4, function(data) {
               self.dailyData[4]['desc'] = "共" + data.sj_sum + "单，超时" + data.sj_timeout + "单";
-            })
+            },true)
             self.judge(self.judgeTOP210, "jh", 5, function(data) {
               self.dailyData[5]['desc'] = "共" + data.jh_sum + "单，超时" + data.jh_timeout + "单";
-            })
+            },true)
             self.judge(self.judgeTOP210, "zq", 6, function(data) {
               self.dailyData[6]['desc'] = "共" + data.zq_sum + "单，超时" + data.zq_timeout + "单";
-            })
+            },true)
             self.judge(self.judgeTOP210, "qt", 7, function(data) {
               self.dailyData[7]['desc'] = "共" + data.qt_sum + "单，超时" + data.qt_timeout + "单";
-            })
+            },true)
 
             self.judge(self.judgeTOP800_1_2, "cs", 8, function(data) {
               self.dailyData[8]['desc'] = "共" + data.cs_sum + "单，超时" + data.cs_timeout + "单";
@@ -755,7 +774,7 @@ export default {
             break;
         }
         result[major + "_sum"]++;
-        if (Number(data[i].net_duration) > 120) {
+        if (Number(data[i].net_duration) > 120 && data[i].is_assess == '1') {
           result.timeout++;
           result[major + "_timeout"]++;
         }
@@ -980,11 +999,12 @@ export default {
       }
       return result;
     },
-    judge: function(get_func, result_name, row_index, callback) {
+    judge: function(get_func, result_name, row_index, callback, dataAll=false) {
       let self = this;
+      let list = dataAll?self.assessDataAll:self.assessData;
       let data;
-      for (let i in self.assessData) {
-        data = get_func(self.assessData[i].data);
+      for (let i in list) {
+        data = get_func(list[i].data);
         self.dailyData[row_index]['day' + i] = data[result_name];
       }
       callback(data);
