@@ -37,7 +37,7 @@
 </template>
 
 <script>
-var EXCEPT_NUMBER = ['','无','客户无法提供','-'];
+var EXCEPT_NUMBER = ['','无','客户无法提供','-','temp_000','用户无法提供','无法提供'];
 
 Date.prototype.Format = function(fmt) { //author: meizz   
   var o = {
@@ -476,7 +476,7 @@ export default {
       data.append('START', start);
       data.append('END', end);
       data.append('token',this.token)
-      data.append('province','广东省广州市')
+      data.append('province','广州')
       this.axios
         .post('http://' + self.$global_msg.HOST + 'scripts/assess_order/get_gz_order_by_datetime.php', data)
         .then(function(res) {
@@ -485,7 +485,7 @@ export default {
 
             for (let i in self.rawData) {
               let data = self.rawData[i];
-              if(data.responsible_province != '广州'){
+              if(data.correct_province != '广州'){
                 continue;
               }
               if (data.is_assess == 0 ) {
@@ -520,7 +520,7 @@ export default {
             self.judge(self.judgeTOP33, "sum", 1, function(data) {
               self.dailyData[1]['sum'] = data.sum;
               self.dailyData[1]['sumToTarget'] = self.dailyData[1]['sum'] - self.dailyData[1]['target'];
-              self.dailyData[1]['desc'] = '2020年累计责任故障' + (data.sum + self.TOP33_sum) + '次';
+              self.dailyData[1]['desc'] = new Date().Format('yyyy')+'年累计责任故障' + (data.sum + self.TOP33_sum) + '次';
 
               self.dailyData['TOP33_sum']['sum'] = data.sum + self.TOP33_sum;
               self.dailyData['TOP33_sum']['sumToTarget'] = self.dailyData['TOP33_sum']['sum'] - self.dailyData['TOP33_sum']['target'];
@@ -529,7 +529,7 @@ export default {
               self.dailyData[2]['sum'] = data.time;
               self.dailyData[2]['sumToTarget'] = self.dailyData[2]['sum'] - self.dailyData[2]['target'];
               let timeSum = (self.TOP33_time_sum + data.timeSum) / (self.TOP33_sum + data.sum);
-              self.dailyData[2]['desc'] = '2020年平均历时' + timeSum.toFixed(2) + '分钟';
+              self.dailyData[2]['desc'] = new Date().Format('yyyy')+'年平均历时' + timeSum.toFixed(2) + '分钟';
 
               self.dailyData['TOP33_time']['sum'] = timeSum;
               self.dailyData['TOP33_time']['sumToTarget'] = self.dailyData['TOP33_time']['sum'] - self.dailyData['TOP33_time']['target'];

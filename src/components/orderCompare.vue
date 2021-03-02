@@ -222,7 +222,7 @@ export default {
       let data = new FormData();
       data.append('START',start);
       data.append('END',end);
-      data.append('province','广东省广州市');
+      data.append('province','广州');
       data.append('token',self.token);
       this.axios
         .post('http://'+self.$global_msg.HOST+'scripts/assess_order/get_gz_order_by_datetime.php',data)
@@ -239,7 +239,7 @@ export default {
         let list = this.rawData[i].data;
         let sum = 0;
         for(let n in list){
-          if(list[n].responsible_province == '广州' && list[n].is_assess == '1'){
+          if(list[n].correct_province == '广州' && list[n].is_assess == '1'){
             sum++;
           }
         }
@@ -249,7 +249,7 @@ export default {
         let list = this.rawDataLast[i].data;
         let sum = 0;
         for(let n in list){
-          if(list[n].responsible_province == '广州' && list[n].is_assess == '1'){
+          if(list[n].correct_province == '广州' && list[n].is_assess == '1'){
             sum++;
           }
         }

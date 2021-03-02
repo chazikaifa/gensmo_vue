@@ -141,7 +141,7 @@ export default {
       let data = new FormData();
       data.append('START',start);
       data.append('END',end);
-      data.append('province','广东省广州市');
+      data.append('province','广州');
       data.append('token',self.token);
       this.axios
         .post('http://'+this.$global_msg.HOST+'scripts/assess_order/get_gz_order_by_datetime.php',data)
@@ -195,8 +195,8 @@ export default {
       this.showList = [];
       for (let i in this.rawData) {
         let data = this.rawData[i]
-        if (data.province == '广东省广州市') {
-          let dutyFlag = data.responsible_province == '广州';
+        if (data.responsible_province == '广州') {
+          let dutyFlag = data.correct_province == '广州';
           let timeoutFlag = data.is_assess == '1' && data.time_out == '1' && dutyFlag;
           let showFlag = data.is_assess == '1' && (timeoutFlag || Number(data.time) > Number(data.time_limit));
           if(data.is_assess == '1'){
@@ -286,7 +286,7 @@ export default {
 
             let duty = data.major;
             if (!dutyFlag) {
-              duty = data.responsible_province;
+              duty = data.correct_province;
             }
 
             let timeoutItem = {
@@ -299,7 +299,7 @@ export default {
               netTime: data.net_duration,
               reason: data.trouble_reason_symptom,
               mark: mark,
-              responsible_province: data.responsible_province,
+              correct_province: data.correct_province,
             }
             if (timeoutFlag) {
               this.timeoutList.push(timeoutItem);
@@ -343,7 +343,7 @@ export default {
         }
       }
       if (columnIndex == 5) {
-        if (row.responsible_province != '广州') {
+        if (row.correct_province != '广州') {
           return 'cell_not_responsible'
         }
       }
@@ -404,7 +404,7 @@ export default {
                 if (data.orderId == self.reduce[0].id) {
                   data.reduce_time = self.reduce[0].time;
                   if (self.reduce[0].province != '') {
-                    data.responsible_province = self.reduce[0].province;
+                    data.correct_province = self.reduce[0].province;
                   }
                   let assess_time = parseInt(self.reduce[0].maxTime) - parseInt(self.reduce[0].time);
                   data.assessment_time = assess_time;
@@ -445,6 +445,7 @@ export default {
       this.reduce[0].maxTime = e.row.time;
       this.reduce[0].timeLimit = e.row.timeLimit;
       this.reduce[0].mark = e.row.mark;
+      this.reduce[0].province = e.row.correct_province;
       this.isAdd = !this.isAdd;
     },
     not_edit_id({
@@ -467,7 +468,7 @@ export default {
       row,
       option
     }) {
-      let flag = row.responsible_province == '广州';
+      let flag = row.correct_province == '广州';
       return option.value == flag;
     },
     toDaily: function() {

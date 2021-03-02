@@ -164,7 +164,7 @@ export default {
     getCustomer(){
       let customer = new myArray();
       for(let i in this.rawData){
-        if(this.rawData[i].responsible_province != '广州'){
+        if(this.rawData[i].correct_province != '广州'){
           continue;
         }
         let name = this.rawData[i].name;

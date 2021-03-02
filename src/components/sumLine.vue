@@ -219,7 +219,7 @@ export default {
       let data = new FormData();
       data.append('START',start);
       data.append('END',end);
-      data.append('province','广东省广州市');
+      data.append('province','广州');
       data.append('token',self.token);
       this.axios
         .post('http://'+this.$global_msg.HOST+'scripts/assess_order/get_gz_order_by_datetime.php',data)
@@ -265,7 +265,7 @@ export default {
 
       for(let x in this.rawData){
         let data = this.rawData[x];
-        if(this.rawData[x].province != '广东省广州市' || this.rawData[x].responsible_province != '广州' && this.rawData[x].responsible_province != '用户'){
+        if(this.rawData[x].responsible_province != '广州' || this.rawData[x].correct_province != '广州' && this.rawData[x].correct_province != '用户'){
           continue;
         }
         let time = new Date(data.end_time);
@@ -348,13 +348,13 @@ export default {
 
       for(let x in this.rawData){
         let data = this.rawData[x];
-        if(data.province != '广东省广州市' || data.responsible_province != '广州' && data.responsible_province != '用户'){
+        if(data.responsible_province != '广州' || data.correct_province != '广州' && data.correct_province != '用户'){
           continue;
         }
         let time = new Date(data.end_time);
         for(let i=0;i<dayNow;i++){
           if(time > dateArr[i] && time < dateArr[i+1]){
-            if(data.is_assess == '1' && data.responsible_province == '广州'){
+            if(data.is_assess == '1' && data.correct_province == '广州'){
               union_row1[i]['19责任故障'] = union_row1[i]['19责任故障'] + 1;
               union_row3[i]['故障量'] = union_row3[i]['故障量'] + 1;
             }else{
@@ -369,14 +369,14 @@ export default {
 
       for(let x in this.rawDataLast){
         let data = this.rawDataLast[x];
-        if(data.province != '广东省广州市' || data.responsible_province != '广州' && data.responsible_province != '用户'){
+        if(data.responsible_province != '广州' || data.correct_province != '广州' && data.correct_province != '用户'){
           continue;
         }
         let time = new Date(data.end_time);
         time.setFullYear(time.getFullYear()+1);
         for(let i=0;i<dayNow;i++){
           if(time > dateArr[i] && time < dateArr[i+1]){
-            if(data.is_assess == '1' && data.responsible_province == '广州'){
+            if(data.is_assess == '1' && data.correct_province == '广州'){
               union_row3[i]['去年故障量'] = union_row3[i]['去年故障量'] + 1;
             }else{
               union_row2[i]['去年故障量'] = union_row2[i]['去年故障量'] + 1;

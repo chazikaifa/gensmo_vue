@@ -873,7 +873,7 @@ export default {
       }
     },
     getOrderData:function(){
-      let paramList = ['id','name','start_time','end_time','time','time_limit','net_duration','step','trouble_symptom','link_id','process','circuit_number','contact_number','contact_name','area','is_trouble','is_remote','trouble_class','trouble_reason','business_type','remark','major','roomName','roomType','reasonDescription','hiddenDanger'];
+      let paramList = ['id','name','start_time','end_time','time','time_limit','net_duration','step','trouble_symptom','link_id','process','circuit_number','contact_number','contact_name','area','is_trouble','is_customer','trouble_class','trouble_reason','business_type','remark','major','roomName','roomType','reasonDescription','hiddenDanger'];
       let data = new FormData();
       for(let i in paramList){
         data.append(paramList[i],this.order[paramList[i]]==undefined?'':this.order[paramList[i]])

@@ -242,7 +242,7 @@ export default {
       data.append('START', start);
       data.append('END', end);
       data.append('token',this.token);
-      data.append('province','广东省广州市');
+      data.append('province','广州');
       this.axios
         .post('http://' + this.$global_msg.HOST + 'scripts/assess_order/get_gz_order_by_datetime.php', data)
         .then(function(res) {
@@ -251,7 +251,7 @@ export default {
             let ad = [];
             for (let i in self.rawData) {
               let data = self.rawData[i];
-              if (data.responsible_province == '广州' && (data.is_assess == 1 || (self.canDo.updateAssessOrder == true && data.is_trouble == null))) {
+              if (data.correct_province == '广州' && (data.is_assess == 1 || (self.canDo.updateAssessOrder == true && data.is_trouble == null))) {
                 ad.push(data);
               }
             }
