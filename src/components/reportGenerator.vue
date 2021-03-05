@@ -2638,7 +2638,7 @@ export default {
           }
         }
         self.dataObject.add('TOP33_list','array',arr);
-        //console.log(arr);
+        // console.log(arr);
         return arr.length;
       },function(result){
         self.dataObject.add('TOP33_sum','number',result);
@@ -3401,7 +3401,7 @@ export default {
         for(let i in ad){
           if(ad[i].TOP33 == '1' && ad[i].is_assess == '1' && ad[i].correct_province == '广州'){
             new_55++;
-            console.log(ad[i].orderId);
+            // console.log(ad[i].orderId);
           }
         }
         self.dataObject.add('TOP55_new_sum','number',new_55);

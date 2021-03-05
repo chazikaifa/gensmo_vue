@@ -978,46 +978,50 @@ export default {
       if(this.order.step == '挂起中' && !suspend){
         return {result:'warning',suspend:suspend,msg:'工单未挂起或已解挂，是否自动将工单步骤改为‘未结单’?'}
       }
-      if(this.order.step == '结单' && this.order.is_trouble == '1'){
-        if(this.order.trouble_class == ''){
-          return {result:'fail',msg:'请选择故障分类！'}
-        }
-        if(this.order.trouble_reason == ''){
-          return {result:'fail',msg:'请选择原因细化！'}
-        }
-        let res = null;
-        switch(this.order.trouble_class){
-          case '光缆故障':
-          case '电缆故障':
-            if(!this.order.reasonDescription){
-              res = {result:'fail',msg:'请填写断点位置！'}
-            }
-            break;
-          case '设备故障':
-            if(!this.order.roomType){
-              res =  {result:'fail',msg:'请选择机房类型！'}
-            }
-            if(this.order.roomType !='客户机房' && !this.order.roomName){
-              res =  {result:'fail',msg:'请填写机房名称！'}
-            }
-            if(!this.order.reasonDescription){
-              res =  {result:'fail',msg:'请简述故障原因（例：端口吊死，光模块故障）'}
-            }
-            break;
-          case '动力配套':
-            if(!this.order.roomType){
-              res =  {result:'fail',msg:'请选择机房类型！'}
-            }
-            if(this.order.roomType !='客户机房'&&!this.order.roomName){
-              res =  {result:'fail',msg:'请填写机房名称！'}
-            }
-            if(!this.order.reasonDescription){
-              res =  {result:'fail',msg:'请简述故障原因（例：物业拉闸，市电停电））'}
-            }
-            break;
-        }
-        if(res){
-          return res;
+      if(this.order.step == '结单'){
+        if(this.order.is_trouble == '1'){
+          if(this.order.trouble_class == ''){
+            return {result:'fail',msg:'请选择故障分类！'}
+          }
+          if(this.order.trouble_reason == ''){
+            return {result:'fail',msg:'请选择原因细化！'}
+          }
+          let res = null;
+          switch(this.order.trouble_class){
+            case '光缆故障':
+            case '电缆故障':
+              if(!this.order.reasonDescription){
+                res = {result:'fail',msg:'请填写断点位置！'}
+              }
+              break;
+            case '设备故障':
+              if(!this.order.roomType){
+                res =  {result:'fail',msg:'请选择机房类型！'}
+              }
+              if(this.order.roomType !='客户机房' && !this.order.roomName){
+                res =  {result:'fail',msg:'请填写机房名称！'}
+              }
+              if(!this.order.reasonDescription){
+                res =  {result:'fail',msg:'请简述故障原因（例：端口吊死，光模块故障）'}
+              }
+              break;
+            case '动力配套':
+              if(!this.order.roomType){
+                res =  {result:'fail',msg:'请选择机房类型！'}
+              }
+              if(this.order.roomType !='客户机房'&&!this.order.roomName){
+                res =  {result:'fail',msg:'请填写机房名称！'}
+              }
+              if(!this.order.reasonDescription){
+                res =  {result:'fail',msg:'请简述故障原因（例：物业拉闸，市电停电））'}
+              }
+              break;
+          }
+          if(res){
+            return res;
+          }
+        }else if(this.order.is_trouble == null){
+          return {result:'fail',msg:'请选择是否故障！'}
         }
       }
       return {result:'success'};
