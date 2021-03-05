@@ -37,7 +37,7 @@
 </template>
 
 <script>
-var EXCEPT_NUMBER = ['','无','客户无法提供','-','temp_000','用户无法提供','无法提供'];
+var EXCEPT_NUMBER = ['','无','客户无法提供','客户未提供','-','temp_000','用户无法提供','无法提供'];
 
 Date.prototype.Format = function(fmt) { //author: meizz   
   var o = {

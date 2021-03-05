@@ -276,7 +276,7 @@ export default {
       let data = new FormData();
       data.append('START',all_start.Format('yyyy-MM-dd hh:mm:ss'));
       data.append('END',end.Format('yyyy-MM-dd hh:mm:ss'));
-      data.append('province','广东省广州市');
+      data.append('province','广州');
       data.append('token',self.token);
       this.axios
         .post('http://'+self.$global_msg.HOST+'scripts/assess_order/get_gz_order_by_datetime.php',data)
@@ -287,7 +287,7 @@ export default {
             self.assess_data = [];
             for(let i in self.rawData){
               let data = self.rawData[i];
-              if(data.responsible_province == '广州' || data.responsible_province == '用户'){
+              if(data.correct_province == '广州' || data.correct_province == '用户'){
                 self.assess_data_all.push(data);
                 if(new Date(data.system_end_time) > start){
                   self.assess_data.push(data);
@@ -805,7 +805,7 @@ export default {
         let list = obj.assess_data.data;
         let arr = [];
         for(let i in list){
-          if(list[i].responsible_province == '广州' && list[i].is_assess == '1'){
+          if(list[i].correct_province == '广州' && list[i].is_assess == '1'){
             arr.push(list[i]);
           }
         }
@@ -2617,7 +2617,7 @@ export default {
               trouble_reason:ad[i].trouble_reason,
               time:ad[i].time,
               is_trouble:ad[i].is_trouble,
-              is_assess:(ad[i].responsible_province == '广州' && ad[i].is_assess == '1')?'1':'0',
+              is_assess:(ad[i].correct_province == '广州' && ad[i].is_assess == '1')?'1':'0',
               timeout:ad[i].time_out
             })
           }
@@ -3399,7 +3399,7 @@ export default {
         let ad = obj.assess_data_all.data;
         let new_55 = 0;
         for(let i in ad){
-          if(ad[i].TOP33 == '1' && ad[i].is_assess == '1' && ad[i].responsible_province == '广州'){
+          if(ad[i].TOP33 == '1' && ad[i].is_assess == '1' && ad[i].correct_province == '广州'){
             new_55++;
             console.log(ad[i].orderId);
           }
@@ -3419,7 +3419,7 @@ export default {
         let ad = obj.assess_data_all.data;
         let new_55 = 0;
         for(let i in ad){
-          if(ad[i].TOP33 == '1' && ad[i].is_assess == '1' && ad[i].responsible_province == '广州'){
+          if(ad[i].TOP33 == '1' && ad[i].is_assess == '1' && ad[i].correct_province == '广州'){
             new_55 = new_55 + Number(ad[i].assessment_time);
           }
         }

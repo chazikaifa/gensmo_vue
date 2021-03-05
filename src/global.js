@@ -1,4 +1,4 @@
-const HOST = '10.117.234.126/gensmo/';
+const HOST = '10.117.195.242:24780/gensmo/';
 const THEME_LIST = [
 	"04BE02",
 	"40DEC9",

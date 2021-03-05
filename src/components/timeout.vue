@@ -443,6 +443,7 @@ export default {
       }
       this.reduce[0].id = e.row.id;
       this.reduce[0].maxTime = e.row.time;
+      this.reduce[0].time = e.row.reduce_time;
       this.reduce[0].timeLimit = e.row.timeLimit;
       this.reduce[0].mark = e.row.mark;
       this.reduce[0].province = e.row.correct_province;
