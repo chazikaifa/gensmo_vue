@@ -2,9 +2,9 @@
   <div>
     <div id="title">周报/月报自动生成工具</div>
     <div class="input_box">
-      <div class="data_item" v-for="(item,i) in inputSettings" :key="i">
+      <div class="data_item" v-for="(item,i) in inputSettings" :key="i" v-if="item.isShow?isShow(item.isShow[0],item.isShow[1],item.isShow[2]):true">
         <div class="data_title">{{item.text}}:</div>
-        <el-input class="data_value" placeholder="请输入数据" v-model="item.data" @input="change($event)" v-if="item.type=='text'" />
+        <el-input class="data_value" placeholder="请输入数据" v-model="item.data" @input="change($event)" v-if="item.type=='text'"/>
         <el-select class="data_value" v-model="item.data" placeholder="请选择" v-if="item.type=='select'">
           <el-option
             v-for="option in item.selectOption"
@@ -29,7 +29,7 @@
         <div class="result_title">{{item.text}}:</div>
         <el-input class="result_value" v-model="item.type=='text'?item.value:item.value.path" type="textarea" autosize readonly/></el-input>
       </div>
-      <el-button id="btn_create" type="primary" :loading="create_loading" :disabled="create_loading" @click="onConfirm">{{confirm_text}}</el-button>
+      <el-button id="btn_create" type="primary" :loading="create_loading" :disabled="create_loading" @click="beforeConfirm">{{confirm_text}}</el-button>
     </div>
   </div>
 </template>
@@ -128,6 +128,7 @@ export default {
     return{
       token:'',
       canDo:{},
+      defaultData:[],
       doList:['getList','getAssessOrder','savePic','circuitNumberSum','getReportRecord'],
       rawData:[],
       assess_data:[],
@@ -151,17 +152,52 @@ export default {
       inputSettings:[
         {name:'start',text:'起始时间*',type:'datetime',data:'',dataType:'string'},
         {name:'end',text:'终止时间*',type:'datetime',data:'',dataType:'string'},
-        {name:'type',text:'生成类型*',type:'select',data:'',dataType:'string',selectOption:[{name:'week',text:'周报'},{name:'month',text:'月报'}]},
-        {name:'last3_text',text:'上三期时间',type:'text',data:'',dataType:'string'},
-        {name:'assess_data_last3',text:'上三期19工单数',type:'text',data:'',dataType:'number'},
-        {name:'local_data_last3',text:'上三期本地工单数',type:'text',data:'',dataType:'number'},
-        {name:'last2_text',text:'上两期时间',type:'text',data:'',dataType:'string'},
-        {name:'assess_data_last2',text:'上两期19工单数',type:'text',data:'',dataType:'number'},
-        {name:'local_data_last2',text:'上两期本地工单数',type:'text',data:'',dataType:'number'},
-        {name:'last_text',text:'上期时间',type:'text',data:'',dataType:'string'},
-        {name:'assess_data_last',text:'上期19工单数',type:'text',data:'',dataType:'number'},
-        {name:'local_data_last',text:'上期本地工单数',type:'text',data:'',dataType:'number'}
+        {name:'type',text:'生成类型*',type:'select',data:'week',dataType:'string',selectOption:[{name:'week',text:'周报'},{name:'month',text:'月报'}]},
+        {name:'last3_text',text:'上三期时间',type:'text',data:'',dataType:'string',isShow:['type','==','week'],record:true},
+        {name:'last3_text_month',text:'上三期时间',type:'text',data:'',dataType:'string',isShow:['type','==','month'],record:true},
+        {name:'assess_data_last3',text:'上三期19工单数',type:'text',data:'',dataType:'number',isShow:['type','==','week'],record:true},
+        {name:'local_data_last3',text:'上三期本地工单数',type:'text',data:'',dataType:'number',isShow:['type','==','week'],record:true},
+        {name:'assess_data_last3_month',text:'上三期19工单数',type:'text',data:'',dataType:'number',isShow:['type','==','month'],record:true},
+        {name:'local_data_last3_month',text:'上三期本地工单数',type:'text',data:'',dataType:'number',isShow:['type','==','month'],record:true},
+        {name:'last2_text',text:'上两期时间',type:'text',data:'',dataType:'string',isShow:['type','==','week'],record:true},
+        {name:'last2_text_month',text:'上两期时间',type:'text',data:'',dataType:'string',isShow:['type','==','month'],record:true},
+        {name:'assess_data_last2',text:'上两期19工单数',type:'text',data:'',dataType:'number',isShow:['type','==','week'],record:true},
+        {name:'local_data_last2',text:'上两期本地工单数',type:'text',data:'',dataType:'number',isShow:['type','==','week'],record:true},
+        {name:'assess_data_last2_month',text:'上两期19工单数',type:'text',data:'',dataType:'number',isShow:['type','==','month'],record:true},
+        {name:'local_data_last2_month',text:'上两期本地工单数',type:'text',data:'',dataType:'number',isShow:['type','==','month'],record:true},
+        {name:'last_text',text:'上期时间',type:'text',data:'',dataType:'string',isShow:['type','==','week'],record:true},
+        {name:'last_text_month',text:'上期时间',type:'text',data:'',dataType:'string',isShow:['type','==','month'],record:true},
+        {name:'assess_data_last',text:'上期19工单数',type:'text',data:'',dataType:'number',isShow:['type','==','week'],record:true},
+        {name:'local_data_last',text:'上期本地工单数',type:'text',data:'',dataType:'number',isShow:['type','==','week'],record:true},
+        {name:'assess_data_last_month',text:'上期19工单数',type:'text',data:'',dataType:'number',isShow:['type','==','month'],record:true},
+        {name:'local_data_last_month',text:'上期本地工单数',type:'text',data:'',dataType:'number',isShow:['type','==','month'],record:true}
       ]
+    }
+  },
+  computed:{
+    isShow(){
+      return function(p1,op,p2){
+        let p;
+        for(let item of this.inputSettings){
+          if(item.name == p1){
+            p = item.data
+          }
+        }
+        switch(op){
+        case '>':
+          return p > p2;
+        case '<':
+          return p < p2;
+        case '>=':
+          return p >= p2;
+        case '<=':
+          return p <= p2;
+        case '==':
+          return p == p2;
+        case '!=':
+          return p != p2;
+        }
+      }
     }
   },
   created:function(){
@@ -210,7 +246,7 @@ export default {
       this.axios
         .get('http://'+self.$global_msg.HOST+'scripts/report/reportData.php')
         .then(function(res){
-          //console.log(res);
+          self.defaultData = res.data;
           for(let i in res.data){
             self.dataObject.add(res.data[i].name,res.data[i].dataType,res.data[i].data);
             for(let j in self.inputSettings){
@@ -421,6 +457,116 @@ export default {
           result = res.data;
         })
       return result;
+    },
+    beforeConfirm:function(){
+      this.$confirm('是否将这一期的数据记录到历史记录中？','提示')
+      .then(()=>{
+        this.$confirm('滚动更新还是替换默认数据？','提示',{
+          confirmButtonText:'滚动更新',
+          cancalButtonText:'替换默认',
+          distinguishCancelAndClose:true
+        })
+        .then(()=>{
+          let newDefault = this.defaultData;
+          let obj = this.dataObject;
+          for(let item of newDefault){
+            if(obj.type.data == 'week'){
+              switch(item.name){ 
+                case 'last3_text':
+                  item.data = obj.last2_text.data;
+                  break;
+                case 'last2_text':
+                  item.data = obj.last_text.data;
+                  break;
+                case 'last_text':
+                  item.data = obj.start.data.Format('MM月dd日') + '-' +obj.end.data.Format('dd日')
+                  break;
+                case 'assess_data_last3':
+                  item.data = obj.assess_data_last2.data;
+                  break;
+                case 'assess_data_last2':
+                  item.data = obj.assess_data_last.data;
+                  break;
+                case 'assess_data_last':
+                  item.data = obj.assess_data.data.length;
+                  break;
+                case 'local_data_last3':
+                  item.data = obj.local_data_last2.data;
+                  break;
+                case 'local_data_last2':
+                  item.data = obj.local_data_last.data;
+                  break;
+                case 'local_data_last':
+                  item.data = obj.local_data.data.length;
+                  break;
+              }
+            }
+            if(obj.type.data == 'month'){
+              switch(item.name){ 
+                case 'last3_text_month':
+                  item.data = obj.last2_text_month.data;
+                  break;
+                case 'last2_text_month':
+                  item.data = obj.last_text_month.data;
+                  break;
+                case 'last_text_month':
+                  item.data = obj.month.data+'月'
+                  break;
+                case 'assess_data_last3_month':
+                  item.data = obj.assess_data_last2_month.data;
+                  break;
+                case 'assess_data_last2_month':
+                  item.data = obj.assess_data_last_month.data;
+                  break;
+                case 'assess_data_last_month':
+                  item.data = obj.assess_data.data.length;
+                  break;
+                case 'local_data_last3_month':
+                  item.data = obj.local_data_last2_month.data;
+                  break;
+                case 'local_data_last2_month':
+                  item.data = obj.local_data_last_month.data;
+                  break;
+                case 'local_data_last_month':
+                  item.data = obj.local_data.data.length;
+                  break;
+              }
+            }
+          }
+          this.recordData(newDefault,this.onConfirm)
+        })
+        .catch(()=>{
+          let newDefault = this.defaultData;
+          for(let i of this.inputSettings){
+            for(let d of newDefault){
+              if(i.name == d.name){
+                d.data = i.data
+              }
+            }
+          }
+          this.recordData(newDefault,this.onConfirm)
+        })
+      })
+      .catch(()=>{
+        this.onConfirm();
+      })
+    },
+    recordData:function(arr,callback){
+      let self = this;
+      let data = new FormData();
+      let json = JSON.stringify(arr);
+      data.append('data',json);
+      this.axios
+      .then((res)=>{
+        if(res.data.status == 'success'){
+          this.$message.success('存储成功');
+          callback();
+        }else{
+          this.$message.error(res.data.errMsg);
+        }
+      }).catch((e)=>{
+        this.$message.error('网络错误:'+e);
+      })
     },
     onConfirm:function(){
       let self = this;
@@ -670,31 +816,59 @@ export default {
         let result = '';
         let chart = '';
         let now;
+        let xAxis;
+        let dataAssess;
+        let dataLocal;
         switch(obj.type.data){
           case 'month':
             now = obj.month.data+'月';
+            xAxis = [
+              obj.last3_text_month.data,
+              obj.last2_text_month.data,
+              obj.last_text_month.data,
+              now
+            ];
+            dataAssess = [
+              obj.assess_data_last3_month.data,
+              obj.assess_data_last2_month.data,
+              obj.assess_data_last_month.data,
+              obj.assess_data.data.length
+            ];
+            dataLocal = [
+              obj.local_data_last3_month.data,
+              obj.local_data_last2_month.data,
+              obj.local_data_last_month.data,
+              obj.local_data.data.length
+            ];
             break;
           case 'week':
           default:
             now = obj.start.data.Format('MM月dd日') + '-' +obj.end.data.Format('dd日');
+            xAxis = [
+              obj.last3_text.data,
+              obj.last2_text.data,
+              obj.last_text.data,
+              now
+            ];
+            dataAssess = [
+              obj.assess_data_last3.data,
+              obj.assess_data_last2.data,
+              obj.assess_data_last.data,
+              obj.assess_data.data.length
+            ];
+            dataLocal = [
+              obj.local_data_last3.data,
+              obj.local_data_last2.data,
+              obj.local_data_last.data,
+              obj.local_data.data.length
+            ];
         }
-        let xAxis = [
-          obj.last3_text.data,
-          obj.last2_text.data,
-          obj.last_text.data,
-          now
-        ];
         let legend = {show:true,bottom:5};
         let series = [{
           name: '19系统',
           type: 'bar',
           stack: '故障量',
-          data: [
-            obj.assess_data_last3.data,
-            obj.assess_data_last2.data,
-            obj.assess_data_last.data,
-            obj.assess_data.data.length
-          ],
+          data: dataAssess,
           label:{
             show:true
           },
@@ -703,12 +877,7 @@ export default {
           name: '本地',
           type: 'bar',
           stack: '故障量',
-          data: [
-            obj.local_data_last3.data,
-            obj.local_data_last2.data,
-            obj.local_data_last.data,
-            obj.local_data.data.length
-          ],
+          data: dataLocal,
           label:{
             show:true
           }
@@ -2007,7 +2176,7 @@ export default {
         let result = "";
         for(let i in arr){
           if(arr[i].sum > 0){
-            result = result + arr[i].text + arr[i].sum + "宗，占比" + (arr[i].sum / obj.local_data.data.length * 100).toFixed(2) + "%；"
+            result = result + arr[i].text + arr[i].sum + "宗，占比" + (arr[i].sum / obj.order_local_real.data * 100).toFixed(2) + "%；"
           }
         }
         return result;
